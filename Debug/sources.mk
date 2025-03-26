@@ -24,6 +24,8 @@ C_DEPS :=
 SUBDIRS := \
 Core/Src \
 Core/Startup \
-Drivers/CMSIS/Device/ST/STM32L4xx/Source/Templates \
-Drivers/STM32L4xx_HAL_Driver/Src \
+Drivers/STM32L4xx_HAL_Driver \
+FATFS/App \
+FATFS/Target \
+Middlewares/FatFs \
 

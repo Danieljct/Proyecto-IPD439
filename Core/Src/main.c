@@ -70,7 +70,7 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	int nigga;
+	int saludos;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/

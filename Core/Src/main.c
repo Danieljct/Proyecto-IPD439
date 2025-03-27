@@ -70,9 +70,9 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	uint16_t buffer0[1000] = {0};
-	uint16_t buffer1[1000];
-	for(int i = 0; i < 1000; i++){
+	uint16_t buffer0[10000] = {0};
+	uint16_t buffer1[10000] = {0};
+	for(int i = 0; i < 10000; i++){
 		buffer0[i] = 0xff;
 	}
   /* USER CODE END 1 */
@@ -102,8 +102,11 @@ int main(void)
   MX_SPI3_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-  HAL_DMA_Start(&hdma_memtomem_dma1_channel1, buffer0, buffer1, 1000);
-
+  HAL_DMA_Start(&hdma_memtomem_dma1_channel1, buffer0, buffer1, 10000);
+  int variable = 3;
+  for (int i = 0; i < 100; i++){
+	  variable++;
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -111,7 +114,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  HAL_Delay(1);
+
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */

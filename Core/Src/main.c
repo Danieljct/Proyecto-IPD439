@@ -22,6 +22,7 @@
 #include "dma.h"
 #include "fatfs.h"
 #include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -37,7 +38,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define BUFFSIZE 20000
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -48,27 +49,18 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint32_t time;
+uint32_t difftime;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
-/*void HAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma){
-	if(hdma -> Instance == DMA1_Channel1){
-		HAL_DMA_IRQHandler(&hdma_memtomem_dma1_channel1);
-	}
-}*/
-
 void HAL_DMA_Callback(DMA_HandleTypeDef *hdma){
 	if(hdma -> Instance == DMA1_Channel1){
-		__ASM("nop");
+		difftime = TIM2->CNT - time;
 	}
-}
-
-void DMA1_Channel1_IQRHandler(void){
-	HAL_DMA_IRQHandler(&hdma_memtomem_dma1_channel1);
 }
 
 /* USER CODE END PFP */
@@ -76,7 +68,8 @@ void DMA1_Channel1_IQRHandler(void){
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 int count = 0;
-
+uint16_t buffer0[BUFFSIZE] = {0};
+uint16_t buffer1[BUFFSIZE] = {0};
 /* USER CODE END 0 */
 
 /**
@@ -88,10 +81,7 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 
-
-	uint16_t buffer0[20000] = {0};
-	uint16_t buffer1[20000] = {0};
-	for(int i = 0; i < 20000; i++){
+	for(int i = 0; i < BUFFSIZE; i++){
 		buffer0[i] = 0xff;
 	}
   /* USER CODE END 1 */
@@ -120,12 +110,14 @@ int main(void)
   MX_SPI2_Init();
   MX_SPI3_Init();
   MX_FATFS_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, (uint32_t)buffer0, (uint32_t)buffer1, sizeof(buffer0));
 
-  for (int i = 0; i < 20000; i++){
-	  count++;
-  }
+  HAL_TIM_Base_Start(&htim2);
+  hdma_memtomem_dma1_channel1.XferCpltCallback = &HAL_DMA_Callback;
+  time = TIM2->CNT;
+  HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, buffer0, buffer1, BUFFSIZE);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -133,7 +125,7 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-
+	  HAL_Delay(1);
     /* USER CODE BEGIN 3 */
 	  HAL_Delay(1);
   }

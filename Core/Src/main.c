@@ -55,10 +55,27 @@
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
+/*void HAL_DMA_IRQHandler(DMA_HandleTypeDef *hdma){
+	if(hdma -> Instance == DMA1_Channel1){
+		HAL_DMA_IRQHandler(&hdma_memtomem_dma1_channel1);
+	}
+}*/
+
+void HAL_DMA_Callback(DMA_HandleTypeDef *hdma){
+	if(hdma -> Instance == DMA1_Channel1){
+		__ASM("nop");
+	}
+}
+
+void DMA1_Channel1_IQRHandler(void){
+	HAL_DMA_IRQHandler(&hdma_memtomem_dma1_channel1);
+}
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+int count = 0;
 
 /* USER CODE END 0 */
 
@@ -70,9 +87,11 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-	uint16_t buffer0[10000] = {0};
-	uint16_t buffer1[10000] = {0};
-	for(int i = 0; i < 10000; i++){
+
+
+	uint16_t buffer0[20000] = {0};
+	uint16_t buffer1[20000] = {0};
+	for(int i = 0; i < 20000; i++){
 		buffer0[i] = 0xff;
 	}
   /* USER CODE END 1 */
@@ -102,10 +121,10 @@ int main(void)
   MX_SPI3_Init();
   MX_FATFS_Init();
   /* USER CODE BEGIN 2 */
-  HAL_DMA_Start(&hdma_memtomem_dma1_channel1, buffer0, buffer1, 10000);
-  int variable = 3;
-  for (int i = 0; i < 100; i++){
-	  variable++;
+  HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, (uint32_t)buffer0, (uint32_t)buffer1, sizeof(buffer0));
+
+  for (int i = 0; i < 20000; i++){
+	  count++;
   }
   /* USER CODE END 2 */
 
@@ -116,6 +135,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  HAL_Delay(1);
   }
   /* USER CODE END 3 */
 }

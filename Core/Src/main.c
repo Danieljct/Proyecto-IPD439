@@ -49,8 +49,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint32_t time;
-uint32_t difftime;
+uint32_t time, time2;
+uint32_t difftime, difftime2;
+char finish = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -60,6 +61,7 @@ void SystemClock_Config(void);
 void HAL_DMA_Callback(DMA_HandleTypeDef *hdma){
 	if(hdma -> Instance == DMA1_Channel1){
 		difftime = TIM2->CNT - time;
+		finish = 1;
 	}
 }
 
@@ -118,6 +120,7 @@ int main(void)
   time = TIM2->CNT;
   HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, buffer0, buffer1, BUFFSIZE);
 
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -125,8 +128,15 @@ int main(void)
   while (1)
   {
     /* USER CODE END WHILE */
-	  HAL_Delay(1);
+
     /* USER CODE BEGIN 3 */
+	  if(finish){
+		  time2 = TIM2->CNT;
+        memset(buffer0, 0, sizeof(buffer0));
+        memcpy(buffer1, buffer0, sizeof(buffer0));
+      difftime2 = TIM2->CNT - time2;
+      __NOP();
+	  }
 	  HAL_Delay(1);
   }
   /* USER CODE END 3 */

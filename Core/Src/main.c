@@ -33,12 +33,18 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+// Estas definiciones DEBEN coincidir con tu configuración en CubeMX
+#define LSM6DSL_CS_GPIO_PORT     GPIOA  // Ejemplo: Puerto A
+#define LSM6DSL_CS_PIN           GPIO_PIN_15 // Ejemplo: Pin 15
 
+// --- Constantes específicas del LSM6DSL ---
+#define LSM6DSL_WHO_AM_I_REG     0x0F
+#define LSM6DSL_WHO_AM_I_VAL     0x6A // Valor esperado del registro WHO_AM_I
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define BUFFSIZE 20000
+void Verificar_LSM6DSL(void);
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -49,29 +55,20 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint32_t time, time2;
-uint32_t difftime, difftime2;
-char finish = 0;
+extern SPI_HandleTypeDef hspi3;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
 
-void HAL_DMA_Callback(DMA_HandleTypeDef *hdma){
-	if(hdma -> Instance == DMA1_Channel1){
-		difftime = TIM2->CNT - time;
-		finish = 1;
-	}
-}
 
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-int count = 0;
-uint16_t buffer0[BUFFSIZE] = {0};
-uint16_t buffer1[BUFFSIZE] = {0};
+
 /* USER CODE END 0 */
 
 /**
@@ -82,10 +79,6 @@ int main(void)
 {
 
   /* USER CODE BEGIN 1 */
-
-	for(int i = 0; i < BUFFSIZE; i++){
-		buffer0[i] = 0xff;
-	}
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -115,11 +108,7 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
 
-  HAL_TIM_Base_Start(&htim2);
-  hdma_memtomem_dma1_channel1.XferCpltCallback = &HAL_DMA_Callback;
-  time = TIM2->CNT;
-  HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, buffer0, buffer1, BUFFSIZE);
-
+  Verificar_LSM6DSL();
 
   /* USER CODE END 2 */
 
@@ -130,14 +119,7 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if(finish){
-		  time2 = TIM2->CNT;
-        memset(buffer0, 0, sizeof(buffer0));
-        memcpy(buffer1, buffer0, sizeof(buffer0));
-      difftime2 = TIM2->CNT - time2;
-      __NOP();
-	  }
-	  HAL_Delay(1);
+
   }
   /* USER CODE END 3 */
 }
@@ -193,6 +175,87 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
+HAL_StatusTypeDef LSM6DSL_SPI_ReadRegister(SPI_HandleTypeDef *hspi,
+                                           GPIO_TypeDef* cs_port, uint16_t cs_pin,
+                                           uint8_t reg_addr, uint8_t *p_data,
+                                           uint32_t timeout)
+{
+    HAL_StatusTypeDef status = HAL_OK;
+    uint8_t tx_buffer[2];
+    uint8_t rx_buffer[2];
+
+    // 1. Construir el comando de lectura SPI (Bit 7 = 1 para leer)
+    tx_buffer[0] = 0x80 | reg_addr;
+    tx_buffer[1] = 0x00; // Byte dummy para generar el reloj para recibir
+
+    // 2. Activar Chip Select (CS bajo)
+    HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_RESET);
+
+    // Pequeño retardo (opcional, a veces necesario según el hardware/velocidad)
+    // HAL_Delay(1); // Descomentar si hay problemas
+
+    // 3. Transmitir comando/dirección y recibir el dato
+    //    Se envían 2 bytes, se reciben 2 bytes. El dato útil está en rx_buffer[1].
+    status = HAL_SPI_TransmitReceive(hspi, tx_buffer, rx_buffer, 2, timeout);
+
+    // Pequeño retardo (opcional)
+    // HAL_Delay(1); // Descomentar si hay problemas
+
+    // 4. Desactivar Chip Select (CS alto)
+    HAL_GPIO_WritePin(cs_port, cs_pin, GPIO_PIN_SET);
+
+    // 5. Comprobar estado y guardar el resultado
+    if (status == HAL_OK)
+    {
+        *p_data = rx_buffer[1]; // El dato real está en el segundo byte recibido
+    }
+    else
+    {
+        *p_data = 0xFF; // Indicar un valor de error si falla la comunicación
+    }
+
+    return status;
+}
+
+
+void Verificar_LSM6DSL(void)
+{
+    uint8_t who_am_i_value;
+    HAL_StatusTypeDef spi_status;
+    uint32_t spi_comm_timeout = 1000; // 100 ms
+
+    // Llama a la función para leer el registro WHO_AM_I
+    spi_status = LSM6DSL_SPI_ReadRegister(&hspi3,
+                                          LSM6DSL_CS_GPIO_PORT,
+                                          LSM6DSL_CS_PIN,
+                                          LSM6DSL_WHO_AM_I_REG,
+                                          &who_am_i_value,
+                                          spi_comm_timeout);
+
+    if (spi_status == HAL_OK)
+    {
+        // Comunicación SPI exitosa, verifica el valor leído
+        if (who_am_i_value == LSM6DSL_WHO_AM_I_VAL)
+        {
+            // ¡Correcto! El sensor respondió como se esperaba.
+            printf("LSM6DSL detectado! WHO_AM_I = 0x%02X\n", who_am_i_value);
+            // Aquí puedes proceder a configurar y leer otros registros
+        }
+        else
+        {
+            // Se recibió un valor inesperado
+            printf("Error: Valor WHO_AM_I inesperado: 0x%02X (esperado: 0x%02X)\n",
+                   who_am_i_value, LSM6DSL_WHO_AM_I_VAL);
+            // Podría ser un problema de conexión, configuración SPI incorrecta, etc.
+        }
+    }
+    else
+    {
+        // Error en la comunicación SPI (Timeout, Error, Ocupado)
+        printf("Error en comunicación SPI al leer WHO_AM_I. Status: %d\n", spi_status);
+        // Aquí podrías llamar a tu manejador de errores, Error_Handler();
+    }
+}
 /* USER CODE END 4 */
 
 /**

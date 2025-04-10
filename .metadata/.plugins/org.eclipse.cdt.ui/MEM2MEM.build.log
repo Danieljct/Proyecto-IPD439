@@ -1,0 +1,10 @@
+21:41:33 **** Incremental Build of configuration Debug for project MEM2MEM ****
+make -j4 all 
+arm-none-eabi-size  MEM2MEM.elf 
+   text	   data	    bss	    dec	    hex	filename
+  19480	     32	  82328	 101840	  18dd0	MEM2MEM.elf
+Finished building: default.size.stdout
+ 
+
+21:41:34 Build Finished. 0 errors, 0 warnings. (took 1s.126ms)
+

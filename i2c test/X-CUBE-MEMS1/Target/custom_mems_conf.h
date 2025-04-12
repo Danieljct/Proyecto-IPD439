@@ -35,10 +35,13 @@ extern "C" {
 
 #define USE_CUSTOM_MOTION_SENSOR_LSM6DSL_0        0U
 
-#define CUSTOM_LSM6DSL_0_I2C_Init BSP_I2C2_Init
-#define CUSTOM_LSM6DSL_0_I2C_DeInit BSP_I2C2_DeInit
-#define CUSTOM_LSM6DSL_0_I2C_ReadReg BSP_I2C2_ReadReg
-#define CUSTOM_LSM6DSL_0_I2C_WriteReg BSP_I2C2_WriteReg
+#define CUSTOM_LSM6DSL_0_SPI_Init BSP_SPI3_Init
+#define CUSTOM_LSM6DSL_0_SPI_DeInit BSP_SPI3_DeInit
+#define CUSTOM_LSM6DSL_0_SPI_Send BSP_SPI3_Send
+#define CUSTOM_LSM6DSL_0_SPI_Recv BSP_SPI3_Recv
+
+#define CUSTOM_LSM6DSL_0_CS_PORT GPIOA
+#define CUSTOM_LSM6DSL_0_CS_PIN GPIO_PIN_1
 
 #ifdef __cplusplus
 }

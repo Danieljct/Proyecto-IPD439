@@ -316,53 +316,141 @@ BYTE send_cmd (		/* Return value: R1 resp (bit7==1:Failed to send) */
 /* Initialize disk drive                                                 */
 /*-----------------------------------------------------------------------*/
 
+#include <stdio.h> // Asegúrate de incluir esto y tener printf redirigido (UART, SWO, etc.)
+
 inline DSTATUS USER_SPI_initialize (
 	BYTE drv		/* Physical drive number (0) */
 )
 {
 	BYTE n, cmd, ty, ocr[4];
+	BYTE response; // Variable para almacenar respuestas temporalmente
 
-	if (drv != 0) return STA_NOINIT;		/* Supports only drive 0 */
-	//assume SPI already init init_spi();	/* Initialize SPI */
+    printf("USER_SPI_initialize START (drv=%d)\n", drv); // 1. Inicio y qué driver se intenta
 
-	if (Stat & STA_NODISK) return Stat;	/* Is card existing in the soket? */
+	if (drv != 0) {
+        printf("  Error: Drive number not supported.\n"); // 2. Error si drv no es 0
+        return STA_NOINIT;
+    }
 
-	FCLK_SLOW();
-	for (n = 10; n; n--) xchg_spi(0xFF);	/* Send 80 dummy clocks */
+	// init_spi();	/* Initialize SPI */ // Asegúrate que esto se hizo ANTES y correctamente
 
-	ty = 0;
-	if (send_cmd(CMD0, 0) == 1) {			/* Put the card SPI/Idle state */
-		SPI_Timer_On(1000);					/* Initialization timeout = 1 sec */
-		if (send_cmd(CMD8, 0x1AA) == 1) {	/* SDv2? */
-			for (n = 0; n < 4; n++) ocr[n] = xchg_spi(0xFF);	/* Get 32 bit return value of R7 resp */
-			if (ocr[2] == 0x01 && ocr[3] == 0xAA) {				/* Is the card supports vcc of 2.7-3.6V? */
-				while (SPI_Timer_Status() && send_cmd(ACMD41, 1UL << 30)) ;	/* Wait for end of initialization with ACMD41(HCS) */
-				if (SPI_Timer_Status() && send_cmd(CMD58, 0) == 0) {		/* Check CCS bit in the OCR */
-					for (n = 0; n < 4; n++) ocr[n] = xchg_spi(0xFF);
-					ty = (ocr[0] & 0x40) ? CT_SD2 | CT_BLOCK : CT_SD2;	/* Card id SDv2 */
-				}
-			}
-		} else {	/* Not SDv2 card */
-			if (send_cmd(ACMD41, 0) <= 1) 	{	/* SDv1 or MMC? */
-				ty = CT_SD1; cmd = ACMD41;	/* SDv1 (ACMD41(0)) */
+	// if (Stat & STA_NODISK) return Stat; // Asumiendo que disk_status funciona y ya se comprobó
+
+    printf("  Setting SPI Clock to SLOW...\n"); // 3. Indicando cambio a clock lento
+	FCLK_SLOW(); // Asegúrate que esto realmente baja la velocidad a < 400 KHz
+	printf("  Sending 80 dummy clocks...\n"); // 4. Indicando envío de clocks iniciales
+	for (n = 10; n; n--) xchg_spi(0xFF);
+
+	ty = 0; // Tipo de tarjeta, 0 = desconocido/fallo
+
+    printf("  Sending CMD0 (GO_IDLE_STATE)...\n"); // 5. Intentando CMD0
+	response = send_cmd(CMD0, 0);
+    printf("  CMD0 Response: 0x%02X\n", response); // 6. **CRÍTICO**: Ver la respuesta de CMD0. Debe ser 0x01.
+
+	if (response == 1) { // ¿Respondió que está en Idle State?
+		printf("  CMD0 OK. Card is in Idle State.\n"); // 7. Confirmación CMD0 OK
+		SPI_Timer_On(1000); // Inicia timeout de 1 segundo para el resto
+        printf("  Timeout timer started (1000ms).\n"); // 8. Timer iniciado
+
+        printf("  Sending CMD8 (SEND_IF_COND) check for SDv2...\n"); // 9. Intentando CMD8
+		response = send_cmd(CMD8, 0x1AA);
+        printf("  CMD8 Response: 0x%02X\n", response); // 10. **CRÍTICO**: Ver respuesta R1 de CMD8. Debe ser 0x01 para SDv2 válido.
+
+		if (response == 1) { // ¿Respondió a CMD8?
+			printf("  CMD8 Response OK. Reading R7 payload...\n"); // 11. CMD8 R1 OK
+			for (n = 0; n < 4; n++) ocr[n] = xchg_spi(0xFF);
+            printf("  CMD8 R7 Payload: 0x%02X 0x%02X 0x%02X 0x%02X\n", ocr[0], ocr[1], ocr[2], ocr[3]); // 12. Ver los 4 bytes de la respuesta R7
+
+            // Check pattern and voltage (2.7-3.6V)
+			if (ocr[2] == 0x01 && ocr[3] == 0xAA) {
+                printf("  CMD8 Payload OK (Pattern=0xAA, Voltage OK).\n"); // 13. Confirmación payload CMD8 OK
+				// SDv2 Card Initialization Loop (ACMD41 with HCS bit)
+                printf("  Entering ACMD41 loop (SDv2)...\n"); // 14. Iniciando bucle ACMD41 para SDv2
+                int loop_count = 0;
+				while (SPI_Timer_Status() && (response = send_cmd(ACMD41, 1UL << 30)) != 0) {
+                    // Imprimir cada pocos loops para no inundar la consola
+                    if ((loop_count % 10) == 0) {
+                       printf("    Loop %d: ACMD41(HCS) Response: 0x%02X, Timer: %d\n", loop_count, response, SPI_Timer_Status()); // 15. Respuesta DENTRO del bucle. Esperamos 0x00 para salir.
+                    }
+                    loop_count++;
+                    // HAL_Delay(1); // Considera un pequeño delay si sospechas de timing
+                }
+                printf("  Exited ACMD41 loop. Final Response: 0x%02X, Timer: %d, Loops: %d\n", response, SPI_Timer_Status(), loop_count); // 16. **CRÍTICO**: ¿Salió porque R1 fue 0x00 o por timeout?
+
+				if (SPI_Timer_Status() && response == 0) { // ¿Terminó a tiempo y con éxito?
+                    printf("  ACMD41 OK. Sending CMD58 (READ_OCR)...\n"); // 17. ACMD41 OK
+                    response = send_cmd(CMD58, 0);
+                    printf("  CMD58 Response: 0x%02X\n", response); // 18. Respuesta R1 de CMD58 (debe ser 0x00)
+					if (response == 0) {
+                        printf("  CMD58 OK. Reading OCR...\n"); // 19. CMD58 OK
+						for (n = 0; n < 4; n++) ocr[n] = xchg_spi(0xFF);
+                        printf("  CMD58 OCR Read: 0x%02X 0x%02X 0x%02X 0x%02X\n", ocr[0], ocr[1], ocr[2], ocr[3]); // 20. Ver el registro OCR
+						ty = (ocr[0] & 0x40) ? CT_SD2 | CT_BLOCK : CT_SD2;	// Determina si es SDHC/XC (Block address)
+                        printf("  Card Type determined (SDv2 Path): %d %s\n", ty, (ty & CT_BLOCK) ? "(SDHC/SDXC)" : "(SDSC)"); // 21. Tipo de tarjeta determinado
+					} else {
+                         printf("  CMD58 Failed!\n"); // 22. Fallo CMD58
+                    }
+				} else {
+                    printf("  ACMD41 loop failed (Timeout or final response != 0).\n"); // 23. Fallo en bucle ACMD41
+                }
 			} else {
-				ty = CT_MMC; cmd = CMD1;	/* MMCv3 (CMD1(0)) */
+                printf("  CMD8 Payload Check Failed (Pattern/Voltage mismatch).\n"); // 24. Fallo en chequeo payload CMD8
+            }
+		} else {	// CMD8 falló o no fue respondido -> Podría ser SDv1 o MMC
+            printf("  CMD8 Failed or Not Supported. Assuming SDv1 or MMC...\n"); // 25. Indica que se va por la ruta SDv1/MMC
+			if (send_cmd(ACMD41, 0) <= 1) 	{ // Intenta ACMD41(0) para SDv1
+                printf("  ACMD41(0) Response suggests SDv1.\n"); // 26. Posible SDv1
+				ty = CT_SD1; cmd = ACMD41;
+			} else { // Si falla, intenta CMD1 para MMC
+                printf("  ACMD41(0) failed. Assuming MMC. Trying CMD1...\n"); // 27. Asume MMC
+				ty = CT_MMC; cmd = CMD1;
 			}
-			while (SPI_Timer_Status() && send_cmd(cmd, 0)) ;		/* Wait for end of initialization */
-			if (!SPI_Timer_Status() || send_cmd(CMD16, 512) != 0)	/* Set block length: 512 */
-				ty = 0;
-		}
-	}
-	CardType = ty;	/* Card type */
-	despiselect();
 
-	if (ty) {			/* OK */
+            printf("  Entering Init Loop for SDv1/MMC (CMD%d)...\n", (cmd == CMD1 ? 1 : 41)); // 28. Bucle para SDv1/MMC
+            int loop_count = 0;
+			while (SPI_Timer_Status() && (response = send_cmd(cmd, 0)) != 0) { // Espera hasta que responda 0x00
+                if ((loop_count % 10) == 0) {
+                    printf("    Loop %d: CMD%d Response: 0x%02X, Timer: %d\n", loop_count, (cmd == CMD1 ? 1 : 41), response, SPI_Timer_Status()); // 29. Respuesta dentro del bucle SDv1/MMC
+                }
+                 loop_count++;
+                 // HAL_Delay(1);
+            }
+            printf("  Exited SDv1/MMC loop. Final Response: 0x%02X, Timer: %d, Loops: %d\n", response, SPI_Timer_Status(), loop_count); // 30. ¿Salió bien o por timeout?
+
+			if (!SPI_Timer_Status() || response != 0) { // ¿Timeout o fallo en el último comando del bucle?
+                printf("  SDv1/MMC init loop FAILED.\n"); // 31. Falla bucle SDv1/MMC
+                ty = 0; // Marcar como fallo
+            } else {
+                 printf("  SDv1/MMC init loop OK. Sending CMD16 (Set Block Len=512)...\n"); // 32. Bucle OK, intentando CMD16
+                 response = send_cmd(CMD16, 512);
+                 printf("  CMD16 Response: 0x%02X\n", response); // 33. Respuesta de CMD16 (debe ser 0x00)
+                 if(response != 0) {
+                     printf("  CMD16 FAILED!\n"); // 34. Falla CMD16
+                     ty = 0; // Marcar como fallo
+                 } else {
+                     printf("  CMD16 OK.\n"); // 35. CMD16 OK
+                 }
+            }
+            printf("  Card Type determined (SDv1/MMC Path): %d\n", ty); // 36. Tipo final en esta ruta
+		}
+	} else {
+        printf("  CMD0 FAILED at the beginning!\n"); // 37. Fallo inicial de CMD0
+    }
+
+	CardType = ty;	/* Card type */
+	despiselect(); // Libera CS
+    printf("  Card Deselected (CS HIGH).\n"); // 38. CS liberado
+
+	if (ty) {
+        printf("  Initialization SUCCESSFUL. CardType=%d. Setting SPI Clock to FAST.\n", ty); // 39. ÉXITO FINAL
 		FCLK_FAST();			/* Set fast clock */
 		Stat &= ~STA_NOINIT;	/* Clear STA_NOINIT flag */
-	} else {			/* Failed */
-		Stat = STA_NOINIT;
+	} else {
+        printf("  Initialization FAILED. CardType=%d.\n", ty); // 40. FALLO FINAL
+		Stat |= STA_NOINIT; // Asegura que STA_NOINIT esté puesto si hubo fallo
 	}
 
+    printf("USER_SPI_initialize END. Returning Status: 0x%02X %s\n", Stat, (Stat & STA_NOINIT) ? "(NOT INITIALIZED)" : "(INITIALIZED)"); // 41. Estado final devuelto
 	return Stat;
 }
 

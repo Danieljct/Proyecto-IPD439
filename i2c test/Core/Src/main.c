@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "i2c.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -92,6 +93,7 @@ int main(void)
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
   MX_USART2_UART_Init();
+  MX_I2C1_Init();
   /* USER CODE BEGIN 2 */
   dataRdyIntReceived = 0;
   MEMS_Init();
@@ -101,12 +103,21 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if (dataRdyIntReceived != 0) {
-      dataRdyIntReceived = 0;
-      LSM6DSL_Axes_t acc_axes;
-      LSM6DSL_ACC_GetAxes(&MotionSensor, &acc_axes);
-      printf("% 5d, % 5d, % 5d\r\n",  (int) acc_axes.x, (int) acc_axes.y, (int) acc_axes.z);
-    }
+	  // En tu bucle principal (ej. dentro de while(1))
+	  LSM6DSL_AxesRaw_t axes_acc;
+	  uint8_t drdy_status = 0;
+	  int32_t ret_status; // Variable para guardar el código de retorno
+
+	  // Esperar a que los datos del acelerómetro estén listos
+	  // En el bucle principal, después de detectar DRDY
+
+	      LSM6DSL_ACC_GetAxesRaw(&MotionSensor, &axes_acc);
+	      printf("Acc Raw: X=%d, Y=%d, Z=%d\r\n", axes_acc.x, axes_acc.y, axes_acc.z);
+
+
+
+	  // Añadir delay para controlar la frecuencia de lectura general
+	  HAL_Delay(1000); // Ejemplo: leer cada 100ms
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -165,20 +176,25 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-static void MEMS_Init(void)
 
+
+
+
+static void MEMS_Init(void)
 {
 	LSM6DSL_IO_t io_ctx;
 	uint8_t id;
 	LSM6DSL_AxesRaw_t axes;
-	/* Link I2C functions to the LSM6DSL driver */
-	io_ctx.BusType = LSM6DSL_I2C_BUS;
-	io_ctx.Address = LSM6DSL_I2C_ADD_L;
-	io_ctx.Init = BSP_I2C2_Init;
-	io_ctx.DeInit = BSP_I2C2_DeInit;
-	io_ctx.ReadReg = BSP_I2C2_ReadReg;
-	io_ctx.WriteReg = BSP_I2C2_WriteReg;
-	io_ctx.GetTick = BSP_GetTick;
+
+
+    /* Link SPI functions */
+    io_ctx.BusType = LSM6DSL_SPI_4WIRES_BUS;
+    io_ctx.Init = BSP_SPI3_Init;
+    io_ctx.DeInit = BSP_SPI3_DeInit;
+    io_ctx.ReadReg = BSP_SPI3_Recv;
+    io_ctx.WriteReg = BSP_SPI3_Send;
+    io_ctx.GetTick = BSP_GetTick;
+
 	LSM6DSL_RegisterBusIO(&MotionSensor, &io_ctx);
 	/* Read the LSM6DSL WHO_AM_I register */
 	LSM6DSL_ReadID(&MotionSensor, &id);
@@ -187,6 +203,34 @@ static void MEMS_Init(void)
 	}
 	/* Initialize the LSM6DSL sensor */
 	LSM6DSL_Init(&MotionSensor);
+
+	// En MEMS_Init, después de LSM6DSL_Init y ANTES de llamar a Enable
+	uint8_t test_val_write = 0x38; // Valor de prueba (Ej: 26Hz, 4g)
+	uint8_t test_val_read = 0;
+	printf("Intentando escritura directa a CTRL1_XL (0x10) con valor 0x%02X\r\n", test_val_write);
+
+	// Llama a tu función WriteReg (que usa BSP_SPI3_Send internamente)
+	if (LSM6DSL_Write_Reg(&MotionSensor, LSM6DSL_CTRL1_XL, test_val_write) == LSM6DSL_OK) {
+	    printf("LSM6DSL_Write_Reg reportó éxito.\r\n");
+	    HAL_Delay(5); // Pequeña pausa
+
+	    // Lee de vuelta usando tu función ReadReg (que usa BSP_SPI3_Recv)
+	    if (LSM6DSL_Read_Reg(&MotionSensor, LSM6DSL_CTRL1_XL, &test_val_read) == LSM6DSL_OK) {
+	         printf("Leído de vuelta CTRL1_XL = 0x%02X\r\n", test_val_read);
+	         if (test_val_read == test_val_write) {
+	             printf("¡ÉXITO en Escritura/Lectura Directa!\r\n");
+	         } else {
+	             printf("¡FALLO en Escritura/Lectura Directa! Valor no coincide.\r\n"); // <-- Probablemente aquí está el problema
+	         }
+	    } else {
+	        printf("¡Error leyendo de vuelta CTRL1_XL!\r\n");
+	    }
+	} else {
+	     printf("¡LSM6DSL_Write_Reg FALLÓ!\r\n"); // <-- O aquí si la escritura ya da error
+	}
+	// Detener aquí o continuar con el resto de la inicialización
+	// while(1); // Puedes detener aquí para analizar
+
 	/* Configure the LSM6DSL accelerometer (ODR, scale and interrupt) */
 	LSM6DSL_ACC_SetOutputDataRate(&MotionSensor, 26.0f); /* 26 Hz */
 	LSM6DSL_ACC_SetFullScale(&MotionSensor, 4); /* [-4000mg; +4000mg] */
@@ -195,6 +239,63 @@ static void MEMS_Init(void)
 	/* Start the LSM6DSL accelerometer */
 	LSM6DSL_ACC_Enable(&MotionSensor);
 
+
+
+#if 0
+    // Asume que MotionSensor es una variable global o estática de tipo LSM6DSL_Object_t
+    if (LSM6DSL_RegisterBusIO(&MotionSensor, &io_ctx) != LSM6DSL_OK) {
+        Error_Handler(); // Añade chequeos de error
+    }
+
+    /* Read WHO_AM_I */
+    if (LSM6DSL_ReadID(&MotionSensor, &id) != LSM6DSL_OK) {
+         Error_Handler();
+    }
+    //if (id != LSM6DSL_ID) {
+    //    Error_Handler(); // Error si el ID no coincide
+    //}
+
+    /* Initialize the sensor (deja los sensores apagados) */
+    if (LSM6DSL_Init(&MotionSensor) != LSM6DSL_OK) {
+         Error_Handler();
+    }
+
+
+    /* Configure Gyroscope (¡Añadir si lo vas a usar!) */
+    // if (LSM6DSL_GYRO_SetOutputDataRate(&MotionSensor, 104.0f) != LSM6DSL_OK) { Error_Handler(); }
+    // if (LSM6DSL_GYRO_SetFullScale(&MotionSensor, 500) != LSM6DSL_OK) { Error_Handler(); }
+
+
+    /* Enable Accelerometer (Ahora escribe el ODR guardado y lo enciende) */
+    int32_t enable_ret = LSM6DSL_ACC_Enable(&MotionSensor);
+    if (enable_ret != LSM6DSL_OK) {
+        printf("¡¡ERROR: LSM6DSL_ACC_Enable falló con código %ld!!\r\n", enable_ret);
+        Error_Handler();
+    } else {
+        printf("LSM6DSL_ACC_Enable reportó éxito.\r\n"); // Confirmar que se cree exitoso
+    }
+
+    // En MEMS_Init, justo después de verificar LSM6DSL_ACC_Enable
+    uint8_t ctrl1_xl_val = 0;
+    HAL_Delay(1); // Pequeña pausa
+    if (LSM6DSL_Read_Reg(&MotionSensor, LSM6DSL_CTRL1_XL, &ctrl1_xl_val) == LSM6DSL_OK) {
+        printf("MEMS_Init: CTRL1_XL leído DESPUÉS de Enable = 0x%02X\r\n", ctrl1_xl_val);
+        // Para 26Hz (LSM6DSL_XL_ODR_26Hz = 0x03), los bits 7-4 deberían ser 0011.
+        // Así que esperarías ver algo como 0x3? (ej: 0x30, 0x34, etc.)
+    } else {
+        printf("MEMS_Init: ¡Error leyendo CTRL1_XL después de Enable!\r\n");
+    }
+    HAL_Delay(50); // Pausa antes de entrar al bucle principal
+    /* Enable Gyroscope (¡Añadir si lo configuraste!) */
+    // if (LSM6DSL_GYRO_Enable(&MotionSensor) != LSM6DSL_OK) { Error_Handler(); }
+
+
+    if ( LSM6DSL_ACC_Enable_6D_Orientation(&MotionSensor, 0) != LSM6DSL_OK) {
+         Error_Handler();
+    }
+
+#endif
+    // HAL_Delay(20); // Opcional: Pequeña pausa para asegurar la primera muestra
 }
 
 
@@ -223,6 +324,7 @@ void Error_Handler(void)
   __disable_irq();
   while(1) {
     HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+    printf("no se conectó");
     HAL_Delay(50); /* wait 50 ms */
   }
   /* USER CODE END Error_Handler_Debug */

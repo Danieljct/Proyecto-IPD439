@@ -23,6 +23,6 @@
 
 /* Defines ------------------------------------------------------------------*/
 /* STMicroelectronics.X-CUBE-MEMS1.11.1.0 */
-#define LSM6DSL_ACCGYR_I2C
+#define LSM6DSL_ACCGYR_SPI
 
 #endif /* __RTE_COMPONENTS_H__ */

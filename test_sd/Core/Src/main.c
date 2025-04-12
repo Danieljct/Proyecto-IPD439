@@ -20,6 +20,7 @@
 #include "main.h"
 #include "fatfs.h"
 #include "spi.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -51,14 +52,14 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-void myprintf(const char *fmt, ...);
+uint32_t time, difftime;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
-FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points);
 /* USER CODE BEGIN PFP */
-
+FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -108,68 +109,40 @@ int main(void)
   MX_USART2_UART_Init();
   MX_SPI2_Init();
   MX_FATFS_Init();
+  MX_TIM2_Init();
+  /* USER CODE BEGIN 2 */
+  HAL_TIM_Base_Start(&htim2);
+  time = TIM2->CNT;
+  FATFS MiFatFs; // Objeto del sistema de archivos
+     char MiSdPath[4]; // Ruta ej: "0:/"
 
-   HAL_Delay(1000); //a short delay is important to let the SD card settle
+     if (f_mount(&MiFatFs, MiSdPath, 1) == FR_OK) {
+  	   myprintf("SD montada. Procediendo a generar CSV...\r\n");
 
-   //some variables for FatFs
-   FATFS FatFs; 	//Fatfs handle
-   FIL fil; 		//File handle
-   FRESULT fres; //Result after operations
+         // Llamar a la función para generar el archivo
+         FRESULT res = generate_sine_to_csv(
+                             "0:/sin1.csv", // Nombre del archivo en la SD
+                             5.0,                // Amplitud = 5.0
+                             2.0,                // Frecuencia = 2 Hz (2 ciclos por segundo)
+                             3.0,                // Duración = 3 segundos
+                             150                 // Número de puntos = 150 (generará 150 puntos en 3 seg)
+                         );
 
-   //Open the file system
-   fres = f_mount(&FatFs, "", 1); //1=mount now
-   if (fres != FR_OK) {
- 	myprintf("f_mount error (%i)\r\n", fres);
- 	//while(1);
-   }
+         if (res == FR_OK) {
+      	   myprintf("Archivo CSV generado con éxito.\r\n");
+      	   difftime = TIM2->CNT - time;
+           myprintf("Tiempo de ejecución: %f ms\r\n", difftime/80000000.0);
+         } else {
+      	   myprintf("Fallo al generar el archivo CSV.\r\n");
+         }
 
-   //Let's get some statistics from the SD card
-   DWORD free_clusters, free_sectors, total_sectors;
+         // Opcional: desmontar la unidad si ya no se necesita
+         f_mount(NULL, MiSdPath, 0);
 
-   FATFS* getFreeFs;
+     } else {
+  	   myprintf("Error al montar la SD Card.\r\n");
 
-   fres = f_getfree("", &free_clusters, &getFreeFs);
-   if (fres != FR_OK) {
- 	myprintf("f_getfree error (%i)\r\n", fres);
- //	while(1);
-   }
-
-   //Formula comes from ChaN's documentation
-   total_sectors = (getFreeFs->n_fatent - 2) * getFreeFs->csize;
-   free_sectors = free_clusters * getFreeFs->csize;
-
-   myprintf("SD card stats:\r\n%10lu KiB total drive space.\r\n%10lu KiB available.\r\n", total_sectors / 2, free_sectors / 2);
-
-
-
-   FATFS MiFatFs; // Objeto del sistema de archivos
-   char MiSdPath[4]; // Ruta ej: "0:/"
-
-   if (f_mount(&MiFatFs, MiSdPath, 1) == FR_OK) {
-	   myprintf("SD montada. Procediendo a generar CSV...\r\n");
-
-       // Llamar a la función para generar el archivo
-       FRESULT res = generate_sine_to_csv(
-                           "0:/sin.csv", // Nombre del archivo en la SD
-                           5.0,                // Amplitud = 5.0
-                           2.0,                // Frecuencia = 2 Hz (2 ciclos por segundo)
-                           3.0,                // Duración = 3 segundos
-                           150                 // Número de puntos = 150 (generará 150 puntos en 3 seg)
-                       );
-
-       if (res == FR_OK) {
-    	   myprintf("Archivo CSV generado con éxito.\r\n");
-       } else {
-    	   myprintf("Fallo al generar el archivo CSV.\r\n");
-       }
-
-       // Opcional: desmontar la unidad si ya no se necesita
-       f_mount(NULL, MiSdPath, 0);
-
-   } else {
-	   myprintf("Error al montar la SD Card.\r\n");
-
-   }
+     }
 
 
   /* USER CODE END 2 */

@@ -8204,3 +8204,12 @@ Command-line arguments:  -os win32 -ws win32 -arch x86_64
 
 !ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-12 00:46:58.392
 !MESSAGE Existing sessions are:
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-12 00:55:43.081
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-12 00:59:44.455
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-12 01:03:56.198
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s

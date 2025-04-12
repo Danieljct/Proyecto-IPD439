@@ -371,3 +371,190 @@ Finished building: default.size.stdout
  
 Finished building: i2c test.list
  
+00:55:35 **** Incremental Build of configuration Debug for project i2c test ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/stm32l4xx_nucleo_bus.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32l4xx_nucleo_bus.d" -MT"Core/Src/stm32l4xx_nucleo_bus.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32l4xx_nucleo_bus.o"
+../Core/Src/stm32l4xx_nucleo_bus.c: In function 'BSP_SPI3_Send':
+../Core/Src/stm32l4xx_nucleo_bus.c:173:5: warning: implicit declaration of function 'memcpy' [-Wimplicit-function-declaration]
+  173 |     memcpy(&tx_buffer[1], pData, Length);
+      |     ^~~~~~
+../Core/Src/stm32l4xx_nucleo_bus.c:22:1: note: include '<string.h>' or provide a declaration of 'memcpy'
+   21 | #include "stm32l4xx_nucleo_bus.h"
+  +++ |+#include <string.h>
+   22 | 
+../Core/Src/stm32l4xx_nucleo_bus.c:173:5: warning: incompatible implicit declaration of built-in function 'memcpy' [-Wbuiltin-declaration-mismatch]
+  173 |     memcpy(&tx_buffer[1], pData, Length);
+      |     ^~~~~~
+../Core/Src/stm32l4xx_nucleo_bus.c:173:5: note: include '<string.h>' or provide a declaration of 'memcpy'
+../Core/Src/stm32l4xx_nucleo_bus.c:174:5: warning: implicit declaration of function 'printf' [-Wimplicit-function-declaration]
+  174 |     printf("BSP_SPI3_Send: Escribiendo Reg=0x%02X, tx_buffer[0]=0x%02X\n", Reg, tx_buffer[0]);
+      |     ^~~~~~
+../Core/Src/stm32l4xx_nucleo_bus.c:22:1: note: include '<stdio.h>' or provide a declaration of 'printf'
+   21 | #include "stm32l4xx_nucleo_bus.h"
+  +++ |+#include <stdio.h>
+   22 | 
+../Core/Src/stm32l4xx_nucleo_bus.c:174:5: warning: incompatible implicit declaration of built-in function 'printf' [-Wbuiltin-declaration-mismatch]
+  174 |     printf("BSP_SPI3_Send: Escribiendo Reg=0x%02X, tx_buffer[0]=0x%02X\n", Reg, tx_buffer[0]);
+      |     ^~~~~~
+../Core/Src/stm32l4xx_nucleo_bus.c:174:5: note: include '<stdio.h>' or provide a declaration of 'printf'
+../Core/Src/stm32l4xx_nucleo_bus.c: In function 'BSP_SPI3_Recv':
+../Core/Src/stm32l4xx_nucleo_bus.c:224:9: warning: incompatible implicit declaration of built-in function 'memcpy' [-Wbuiltin-declaration-mismatch]
+  224 |         memcpy(data, &rx_buffer[1], len);
+      |         ^~~~~~
+../Core/Src/stm32l4xx_nucleo_bus.c:224:9: note: include '<string.h>' or provide a declaration of 'memcpy'
+../Core/Src/stm32l4xx_nucleo_bus.c:228:9: warning: incompatible implicit declaration of built-in function 'printf' [-Wbuiltin-declaration-mismatch]
+  228 |         printf("BSP_SPI3_Recv: HAL_SPI_TransmitReceive falló con estado: %d\r\n", status);
+      |         ^~~~~~
+../Core/Src/stm32l4xx_nucleo_bus.c:228:9: note: include '<stdio.h>' or provide a declaration of 'printf'
+arm-none-eabi-gcc -o "i2c test.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\i2c test\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="i2c test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: i2c test.elf
+ 
+arm-none-eabi-size  i2c\ test.elf 
+arm-none-eabi-objdump -h -S i2c\ test.elf  > "i2c test.list"
+   text	   data	    bss	    dec	    hex	filename
+  45752	    468	   2292	  48512	   bd80	i2c test.elf
+Finished building: default.size.stdout
+ 
+Finished building: i2c test.list
+ 
+00:57:47 **** Incremental Build of configuration Debug for project i2c test ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/stm32l4xx_nucleo_bus.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/stm32l4xx_nucleo_bus.d" -MT"Core/Src/stm32l4xx_nucleo_bus.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/stm32l4xx_nucleo_bus.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:109:19: warning: unused variable 'ret_status' [-Wunused-variable]
+  109 |           int32_t ret_status; // Variable para guardar el código de retorno
+      |                   ^~~~~~~~~~
+../Core/Src/main.c:108:19: warning: unused variable 'drdy_status' [-Wunused-variable]
+  108 |           uint8_t drdy_status = 0;
+      |                   ^~~~~~~~~~~
+../Core/Src/main.c: In function 'MEMS_Init':
+../Core/Src/main.c:275:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  275 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:276:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  276 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+arm-none-eabi-gcc -o "i2c test.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\i2c test\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="i2c test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: i2c test.elf
+ 
+arm-none-eabi-size  i2c\ test.elf 
+arm-none-eabi-objdump -h -S i2c\ test.elf  > "i2c test.list"
+   text	   data	    bss	    dec	    hex	filename
+  45768	    468	   2292	  48528	   bd90	i2c test.elf
+Finished building: default.size.stdout
+ 
+Finished building: i2c test.list
+ 
+00:58:38 **** Incremental Build of configuration Debug for project i2c test ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:109:19: warning: unused variable 'ret_status' [-Wunused-variable]
+  109 |           int32_t ret_status; // Variable para guardar el código de retorno
+      |                   ^~~~~~~~~~
+../Core/Src/main.c:108:19: warning: unused variable 'drdy_status' [-Wunused-variable]
+  108 |           uint8_t drdy_status = 0;
+      |                   ^~~~~~~~~~~
+../Core/Src/main.c: In function 'MEMS_Init':
+../Core/Src/main.c:275:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  275 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:276:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  276 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+arm-none-eabi-gcc -o "i2c test.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\i2c test\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="i2c test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: i2c test.elf
+ 
+arm-none-eabi-size  i2c\ test.elf 
+arm-none-eabi-objdump -h -S i2c\ test.elf  > "i2c test.list"
+   text	   data	    bss	    dec	    hex	filename
+  45768	    468	   2292	  48528	   bd90	i2c test.elf
+Finished building: default.size.stdout
+ 
+Finished building: i2c test.list
+ 
+00:59:36 **** Incremental Build of configuration Debug for project i2c test ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:109:19: warning: unused variable 'ret_status' [-Wunused-variable]
+  109 |           int32_t ret_status; // Variable para guardar el código de retorno
+      |                   ^~~~~~~~~~
+../Core/Src/main.c:108:19: warning: unused variable 'drdy_status' [-Wunused-variable]
+  108 |           uint8_t drdy_status = 0;
+      |                   ^~~~~~~~~~~
+../Core/Src/main.c: In function 'MEMS_Init':
+../Core/Src/main.c:275:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  275 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:276:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  276 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+arm-none-eabi-gcc -o "i2c test.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\i2c test\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="i2c test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: i2c test.elf
+ 
+arm-none-eabi-size  i2c\ test.elf 
+arm-none-eabi-objdump -h -S i2c\ test.elf  > "i2c test.list"
+   text	   data	    bss	    dec	    hex	filename
+  45760	    468	   2292	  48520	   bd88	i2c test.elf
+Finished building: default.size.stdout
+ 
+Finished building: i2c test.list
+ 
+01:02:00 **** Incremental Build of configuration Debug for project i2c test ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:110:19: warning: unused variable 'ret_status' [-Wunused-variable]
+  110 |           int32_t ret_status; // Variable para guardar el código de retorno
+      |                   ^~~~~~~~~~
+../Core/Src/main.c:109:19: warning: unused variable 'drdy_status' [-Wunused-variable]
+  109 |           uint8_t drdy_status = 0;
+      |                   ^~~~~~~~~~~
+../Core/Src/main.c: In function 'MEMS_Init':
+../Core/Src/main.c:276:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  276 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:277:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  277 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+arm-none-eabi-gcc -o "i2c test.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\i2c test\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="i2c test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: i2c test.elf
+ 
+arm-none-eabi-size  i2c\ test.elf 
+arm-none-eabi-objdump -h -S i2c\ test.elf  > "i2c test.list"
+   text	   data	    bss	    dec	    hex	filename
+  45776	    468	   2292	  48536	   bd98	i2c test.elf
+Finished building: default.size.stdout
+ 
+Finished building: i2c test.list
+ 
+01:03:47 **** Incremental Build of configuration Debug for project i2c test ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:110:19: warning: unused variable 'ret_status' [-Wunused-variable]
+  110 |           int32_t ret_status; // Variable para guardar el código de retorno
+      |                   ^~~~~~~~~~
+../Core/Src/main.c:109:19: warning: unused variable 'drdy_status' [-Wunused-variable]
+  109 |           uint8_t drdy_status = 0;
+      |                   ^~~~~~~~~~~
+../Core/Src/main.c: In function 'MEMS_Init':
+../Core/Src/main.c:276:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  276 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:277:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  277 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+arm-none-eabi-gcc -o "i2c test.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\i2c test\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="i2c test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: i2c test.elf
+ 
+arm-none-eabi-size  i2c\ test.elf 
+arm-none-eabi-objdump -h -S i2c\ test.elf  > "i2c test.list"
+   text	   data	    bss	    dec	    hex	filename
+  45776	    468	   2292	  48536	   bd98	i2c test.elf
+Finished building: default.size.stdout
+ 
+Finished building: i2c test.list
+ 

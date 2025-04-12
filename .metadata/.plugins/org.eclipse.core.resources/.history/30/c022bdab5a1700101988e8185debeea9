@@ -97,7 +97,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   dataRdyIntReceived = 0;
   MEMS_Init();
-  printf("AccX AccY AccZ");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -113,12 +112,12 @@ int main(void)
 	  // En el bucle principal, después de detectar DRDY
 
 	      LSM6DSL_ACC_GetAxesRaw(&MotionSensor, &axes_acc);
-	      printf("%d %d %d\r\n", axes_acc.x, axes_acc.y, axes_acc.z);
+	      printf("Acc Raw: X=%d, Y=%d, Z=%d\r\n", axes_acc.x, axes_acc.y, axes_acc.z);
 
 
 
 	  // Añadir delay para controlar la frecuencia de lectura general
-	  HAL_Delay(2); // Ejemplo: leer cada 100ms
+	  HAL_Delay(1000); // Ejemplo: leer cada 100ms
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -177,88 +176,7 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 
-int32_t SPI_Send(void *ignored_handle, uint8_t Reg, uint8_t *pData, uint16_t Length)
-{
-    // Tamaño total de la transmisión SPI (1 byte de dirección + Length bytes de datos)
-    uint16_t transfer_size = 1 + Length;
-    int32_t ret = BSP_ERROR_NONE; // 0
-    // Dentro de BSP_SPI3_Send, antes de HAL_SPI_Transmit
 
-    // Buffer local para la transmisión completa
-    // Asegúrate de que sea lo suficientemente grande para la escritura más larga posible.
-    // O usa asignación dinámica si prefieres y tienes heap configurado.
-    uint8_t tx_buffer[transfer_size];
-
-    // Preparar comando de escritura (MSB=0 para escribir)
-    tx_buffer[0] = 0x7F & Reg; // Pone a 0 el bit 7
-
-    // Copiar los datos a escribir después del comando/dirección
-    memcpy(&tx_buffer[1], pData, Length);
-    printf("BSP_SPI3_Send: Escribiendo Reg=0x%02X, tx_buffer[0]=0x%02X\n", Reg, tx_buffer[0]);
-    // Llamar a HAL para transmitir el buffer completo
-    // Asumiendo que hspi3 es tu handle SPI global o accesible
-
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-    HAL_Delay(1);
-    if (HAL_SPI_Transmit(&hspi3, tx_buffer, transfer_size, BUS_SPI3_POLL_TIMEOUT*10) != HAL_OK)
-    {
-
-        // Error en la transmisión HAL
-         printf("BSP_SPI3_Send: HAL_SPI_Transmit falló!\r\n");
-         ret = BSP_ERROR_UNKNOWN_FAILURE; // O un código de error más específico
-    }
-
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-    // No necesitas recibir nada en una escritura pura (a menos que quieras verificar MISO)
-
-    return ret;
-}
-
-/**
-  * @brief  Receive Data from SPI BUS
-  * @param  pData: Pointer to data buffer to receive
-  * @param  Length: Length of data in byte
-  * @retval BSP status
-  */
-// Asumiendo que BSP_SPI3_Recv recibe (..., uint8_t reg, uint8_t *data, uint16_t len)
-int32_t SPI_Recv(void *handle, uint8_t reg, uint8_t *data, uint16_t len)
-{
-    // Tamaño total de la transferencia SPI
-    uint16_t transfer_size = 1 + len;
-
-    // Buffers locales (pueden ser estáticos si len tiene un máximo conocido y pequeño)
-    uint8_t tx_buffer[transfer_size];
-    uint8_t rx_buffer[transfer_size];
-
-    // Preparar comando de lectura (Ej: MSB=1 para leer)
-    tx_buffer[0] = 0x80 | reg;
-
-    // Rellenar resto de Tx con dummy bytes (0x00 o 0xFF)
-    for (uint16_t i = 1; i < transfer_size; i++) {
-        tx_buffer[i] = 0x00; // O 0xFF
-    }
-
-    // Llamar a HAL con buffers válidos
-    // Asumiendo que hspi3 es tu handle SPI global o accesible
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-    HAL_Delay(1);
-    HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(&hspi3, tx_buffer, rx_buffer, transfer_size, HAL_MAX_DELAY); // Usa un timeout adecuado
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
-    if (status == HAL_OK) {
-        // Copiar los datos recibidos relevantes al buffer de destino
-        memcpy(data, &rx_buffer[1], len);
-        return 0; // Éxito (LSM6DSL_OK)
-    } else {
-        // Error en la comunicación HAL
-        printf("BSP_SPI3_Recv: HAL_SPI_TransmitReceive falló con estado: %d\r\n", status);
-        // Devolver un código de error. Podrías mapear HAL_ERROR, HAL_TIMEOUT etc. a errores específicos.
-        if (status == HAL_TIMEOUT) {
-             return -2; // Ejemplo para timeout
-        } else {
-             return -1; // Error genérico (LSM6DSL_ERROR)
-        }
-    }
-}
 
 
 
@@ -273,8 +191,8 @@ static void MEMS_Init(void)
     io_ctx.BusType = LSM6DSL_SPI_4WIRES_BUS;
     io_ctx.Init = BSP_SPI3_Init;
     io_ctx.DeInit = BSP_SPI3_DeInit;
-    io_ctx.ReadReg = SPI_Recv;
-    io_ctx.WriteReg = SPI_Send;
+    io_ctx.ReadReg = BSP_SPI3_Recv;
+    io_ctx.WriteReg = BSP_SPI3_Send;
     io_ctx.GetTick = BSP_GetTick;
 
 	LSM6DSL_RegisterBusIO(&MotionSensor, &io_ctx);
@@ -314,7 +232,7 @@ static void MEMS_Init(void)
 	// while(1); // Puedes detener aquí para analizar
 
 	/* Configure the LSM6DSL accelerometer (ODR, scale and interrupt) */
-	LSM6DSL_ACC_SetOutputDataRate(&MotionSensor, 6660); /* 26 Hz */
+	LSM6DSL_ACC_SetOutputDataRate(&MotionSensor, 26.0f); /* 26 Hz */
 	LSM6DSL_ACC_SetFullScale(&MotionSensor, 4); /* [-4000mg; +4000mg] */
 	LSM6DSL_ACC_Set_INT1_DRDY(&MotionSensor, ENABLE); /* Enable DRDY */
 	LSM6DSL_ACC_GetAxesRaw(&MotionSensor, &axes); /* Clear DRDY */

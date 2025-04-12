@@ -97,7 +97,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   dataRdyIntReceived = 0;
   MEMS_Init();
-  printf("AccX AccY AccZ");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -113,12 +112,12 @@ int main(void)
 	  // En el bucle principal, después de detectar DRDY
 
 	      LSM6DSL_ACC_GetAxesRaw(&MotionSensor, &axes_acc);
-	      printf("%d %d %d\r\n", axes_acc.x, axes_acc.y, axes_acc.z);
+	      printf("X=%d, Y=%d, Z=%d\r\n", axes_acc.x, axes_acc.y, axes_acc.z);
 
 
 
 	  // Añadir delay para controlar la frecuencia de lectura general
-	  HAL_Delay(2); // Ejemplo: leer cada 100ms
+	  HAL_Delay(10); // Ejemplo: leer cada 100ms
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

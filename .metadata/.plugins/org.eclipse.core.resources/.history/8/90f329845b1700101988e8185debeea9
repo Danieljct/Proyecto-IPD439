@@ -118,7 +118,7 @@ int main(void)
 
 
 	  // Añadir delay para controlar la frecuencia de lectura general
-	  HAL_Delay(2); // Ejemplo: leer cada 100ms
+	  HAL_Delay(10); // Ejemplo: leer cada 100ms
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

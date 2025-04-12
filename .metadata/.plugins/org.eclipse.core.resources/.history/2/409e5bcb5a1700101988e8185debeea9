@@ -97,7 +97,6 @@ int main(void)
   /* USER CODE BEGIN 2 */
   dataRdyIntReceived = 0;
   MEMS_Init();
-  printf("AccX AccY AccZ");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -113,12 +112,12 @@ int main(void)
 	  // En el bucle principal, después de detectar DRDY
 
 	      LSM6DSL_ACC_GetAxesRaw(&MotionSensor, &axes_acc);
-	      printf("%d %d %d\r\n", axes_acc.x, axes_acc.y, axes_acc.z);
+	      printf("Acc Raw: X=%d, Y=%d, Z=%d\r\n", axes_acc.x, axes_acc.y, axes_acc.z);
 
 
 
 	  // Añadir delay para controlar la frecuencia de lectura general
-	  HAL_Delay(2); // Ejemplo: leer cada 100ms
+	  HAL_Delay(1000); // Ejemplo: leer cada 100ms
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -314,7 +313,7 @@ static void MEMS_Init(void)
 	// while(1); // Puedes detener aquí para analizar
 
 	/* Configure the LSM6DSL accelerometer (ODR, scale and interrupt) */
-	LSM6DSL_ACC_SetOutputDataRate(&MotionSensor, 6660); /* 26 Hz */
+	LSM6DSL_ACC_SetOutputDataRate(&MotionSensor, 26.0f); /* 26 Hz */
 	LSM6DSL_ACC_SetFullScale(&MotionSensor, 4); /* [-4000mg; +4000mg] */
 	LSM6DSL_ACC_Set_INT1_DRDY(&MotionSensor, ENABLE); /* Enable DRDY */
 	LSM6DSL_ACC_GetAxesRaw(&MotionSensor, &axes); /* Clear DRDY */

@@ -111,9 +111,8 @@ extern SPI_HandleTypeDef hspi3;
 HAL_StatusTypeDef MX_SPI3_Init(SPI_HandleTypeDef* hspi);
 int32_t BSP_SPI3_Init(void);
 int32_t BSP_SPI3_DeInit(void);
-int32_t BSP_SPI3_Recv(void *handle, uint8_t reg, uint8_t *data, uint16_t len);
-int32_t BSP_SPI3_Send(void *ignored_handle, uint8_t Reg, uint8_t *pData, uint16_t Length);
-
+int32_t BSP_SPI3_Send(uint8_t *pData, uint16_t Length);
+int32_t BSP_SPI3_Recv(uint8_t *pData, uint16_t Length);
 int32_t BSP_SPI3_SendRecv(uint8_t *pTxData, uint8_t *pRxData, uint16_t Length);
 #if (USE_HAL_SPI_REGISTER_CALLBACKS == 1U)
 int32_t BSP_SPI3_RegisterDefaultMspCallbacks (void);

@@ -153,15 +153,42 @@ int32_t BSP_SPI3_DeInit(void)
   * @param  Length: Length of data in byte
   * @retval BSP status
   */
-int32_t BSP_SPI3_Send(uint8_t *pData, uint16_t Length)
-{
-  int32_t ret = BSP_ERROR_NONE;
 
-  if(HAL_SPI_Transmit(&hspi3, pData, Length, BUS_SPI3_POLL_TIMEOUT) != HAL_OK)
-  {
-      ret = BSP_ERROR_UNKNOWN_FAILURE;
-  }
-  return ret;
+int32_t BSP_SPI3_Send(void *ignored_handle, uint8_t Reg, uint8_t *pData, uint16_t Length)
+{
+    // Tamaño total de la transmisión SPI (1 byte de dirección + Length bytes de datos)
+    uint16_t transfer_size = 1 + Length;
+    int32_t ret = BSP_ERROR_NONE; // 0
+    // Dentro de BSP_SPI3_Send, antes de HAL_SPI_Transmit
+
+    // Buffer local para la transmisión completa
+    // Asegúrate de que sea lo suficientemente grande para la escritura más larga posible.
+    // O usa asignación dinámica si prefieres y tienes heap configurado.
+    uint8_t tx_buffer[transfer_size];
+
+    // Preparar comando de escritura (MSB=0 para escribir)
+    tx_buffer[0] = 0x7F & Reg; // Pone a 0 el bit 7
+
+    // Copiar los datos a escribir después del comando/dirección
+    memcpy(&tx_buffer[1], pData, Length);
+    printf("BSP_SPI3_Send: Escribiendo Reg=0x%02X, tx_buffer[0]=0x%02X\n", Reg, tx_buffer[0]);
+    // Llamar a HAL para transmitir el buffer completo
+    // Asumiendo que hspi3 es tu handle SPI global o accesible
+
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+    HAL_Delay(1);
+    if (HAL_SPI_Transmit(&hspi3, tx_buffer, transfer_size, BUS_SPI3_POLL_TIMEOUT*10) != HAL_OK)
+    {
+
+        // Error en la transmisión HAL
+         printf("BSP_SPI3_Send: HAL_SPI_Transmit falló!\r\n");
+         ret = BSP_ERROR_UNKNOWN_FAILURE; // O un código de error más específico
+    }
+
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+    // No necesitas recibir nada en una escritura pura (a menos que quieras verificar MISO)
+
+    return ret;
 }
 
 /**
@@ -170,16 +197,46 @@ int32_t BSP_SPI3_Send(uint8_t *pData, uint16_t Length)
   * @param  Length: Length of data in byte
   * @retval BSP status
   */
-int32_t  BSP_SPI3_Recv(uint8_t *pData, uint16_t Length)
+// Asumiendo que BSP_SPI3_Recv recibe (..., uint8_t reg, uint8_t *data, uint16_t len)
+int32_t BSP_SPI3_Recv(void *handle, uint8_t reg, uint8_t *data, uint16_t len)
 {
-  int32_t ret = BSP_ERROR_NONE;
+    // Tamaño total de la transferencia SPI
+    uint16_t transfer_size = 1 + len;
 
-  if(HAL_SPI_Receive(&hspi3, pData, Length, BUS_SPI3_POLL_TIMEOUT) != HAL_OK)
-  {
-      ret = BSP_ERROR_UNKNOWN_FAILURE;
-  }
-  return ret;
+    // Buffers locales (pueden ser estáticos si len tiene un máximo conocido y pequeño)
+    uint8_t tx_buffer[transfer_size];
+    uint8_t rx_buffer[transfer_size];
+
+    // Preparar comando de lectura (Ej: MSB=1 para leer)
+    tx_buffer[0] = 0x80 | reg;
+
+    // Rellenar resto de Tx con dummy bytes (0x00 o 0xFF)
+    for (uint16_t i = 1; i < transfer_size; i++) {
+        tx_buffer[i] = 0x00; // O 0xFF
+    }
+
+    // Llamar a HAL con buffers válidos
+    // Asumiendo que hspi3 es tu handle SPI global o accesible
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+    HAL_Delay(1);
+    HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(&hspi3, tx_buffer, rx_buffer, transfer_size, HAL_MAX_DELAY); // Usa un timeout adecuado
+    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+    if (status == HAL_OK) {
+        // Copiar los datos recibidos relevantes al buffer de destino
+        memcpy(data, &rx_buffer[1], len);
+        return 0; // Éxito (LSM6DSL_OK)
+    } else {
+        // Error en la comunicación HAL
+        printf("BSP_SPI3_Recv: HAL_SPI_TransmitReceive falló con estado: %d\r\n", status);
+        // Devolver un código de error. Podrías mapear HAL_ERROR, HAL_TIMEOUT etc. a errores específicos.
+        if (status == HAL_TIMEOUT) {
+             return -2; // Ejemplo para timeout
+        } else {
+             return -1; // Error genérico (LSM6DSL_ERROR)
+        }
+    }
 }
+
 
 /**
   * @brief  Send and Receive data to/from SPI BUS (Full duplex)
@@ -273,7 +330,7 @@ __weak HAL_StatusTypeDef MX_SPI3_Init(SPI_HandleTypeDef* hspi)
   hspi->Init.CLKPolarity = SPI_POLARITY_HIGH;
   hspi->Init.CLKPhase = SPI_PHASE_2EDGE;
   hspi->Init.NSS = SPI_NSS_HARD_OUTPUT;
-  hspi->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_8;
+  hspi->Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_256;
   hspi->Init.FirstBit = SPI_FIRSTBIT_MSB;
   hspi->Init.TIMode = SPI_TIMODE_DISABLE;
   hspi->Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;

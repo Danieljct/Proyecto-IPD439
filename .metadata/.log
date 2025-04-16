@@ -8986,3 +8986,153 @@ java.lang.NullPointerException: Cannot read the array length because "containers
 
 !ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 22:08:31.432
 !MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 22:15:54.022
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 22:31:23.150
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 22:32:56.038
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 22:39:49.526
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 22:43:54.725
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 22:51:38.348
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:15:35.057
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:15:39.450
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 33 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:15:39.451
+!MESSAGE Existing sessions are:
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:15:39.453
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 33 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:15:39.454
+!MESSAGE Existing sessions are:
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:20:32.512
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:22:14.082
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:22:18.494
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 36 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:22:18.495
+!MESSAGE Existing sessions are:
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:22:18.496
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 36 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:22:18.497
+!MESSAGE Existing sessions are:
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:23:51.697
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:24:30.341
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:33:20.820
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:34:45.918
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:34:50.456
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 43 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:34:50.457
+!MESSAGE Existing sessions are:
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:34:50.459
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 43 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:34:50.460
+!MESSAGE Existing sessions are:
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:38:53.578
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:39:19.939
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:39:57.523
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:40:31.370
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:41:12.464
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:41:32.813
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:42:33.829
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:42:38.744
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 53 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:42:38.745
+!MESSAGE Existing sessions are:
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:42:38.747
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 53 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:42:38.747
+!MESSAGE Existing sessions are:
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:45:34.739
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:45:39.204
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 57 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:45:39.205
+!MESSAGE Existing sessions are:
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:45:39.207
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 57 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:45:39.208
+!MESSAGE Existing sessions are:
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 23:45:52.241
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:45:56.692
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 58 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:45:56.693
+!MESSAGE Existing sessions are:
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:45:56.695
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 58 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:45:56.696
+!MESSAGE Existing sessions are:
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:47:02.580
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 59 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:47:02.581
+!MESSAGE Existing sessions are:
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:47:02.583
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 59 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 23:47:02.584
+!MESSAGE Existing sessions are:

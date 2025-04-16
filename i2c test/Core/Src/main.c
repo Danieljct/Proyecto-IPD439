@@ -38,6 +38,24 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+// Define max FIFO size in bytes and words
+#define FIFO_MAX_BYTES      4096
+#define FIFO_MAX_WORDS      (FIFO_MAX_BYTES / 2)
+#define ACCEL_WORDS_PER_SET 3 // Ax, Ay, Az (16 bits cada uno)
+#define ACCEL_BYTES_PER_SET (ACCEL_WORDS_PER_SET * 2)
+#define FIFO_MAX_SETS       (FIFO_MAX_WORDS / ACCEL_WORDS_PER_SET) // Max sets (~682)
+
+// --- Tamaño del buffer de lectura local ---
+// Leer chunks más pequeños puede ayudar a evitar bloqueos largos
+// Ajusta según la memoria disponible y la velocidad de procesamiento
+// Un valor entre 256 y 1024 podría ser un buen punto de partida.
+#define READ_BUFFER_BYTES   4096 // Leer hasta 512 bytes (~85 sets) a la vez
+#if (READ_BUFFER_BYTES > FIFO_MAX_BYTES)
+#error READ_BUFFER_BYTES cannot be larger than FIFO_MAX_BYTES
+#endif
+#define MAX_SETS_PER_READ   (READ_BUFFER_BYTES / ACCEL_BYTES_PER_SET)
+
+
 
 /* USER CODE END PD */
 
@@ -49,16 +67,23 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
+uint8_t fifo_read_buffer[256]; // Smaller buffer for reading chunks (e.g., 256 bytes)
+float cached_acc_sensitivity = 0.0f; // Cache sensitivity
+uint8_t fifo_chunk_buffer[READ_BUFFER_BYTES];
 LSM6DSL_Object_t MotionSensor;
 volatile uint32_t dataRdyIntReceived;
 uint32_t time, difftime;
+uint8_t lsm6dsl_init_status_spi = 0;
 
+uint8_t full_fifo_buffer[FIFO_MAX_BYTES];
+uint8_t fifo_was_full_last_time = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-static void MEMS_Init(void);
+static void MEMS_Init_SPI_FIFO_Fast_AccelZ(void); // Renombrado
+static void Read_Process_FIFO_AccelZ_SPI(void);// Nueva función
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -100,33 +125,22 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim2);
-  dataRdyIntReceived = 0;
-  MEMS_Init();
-  printf("AccX AccY AccZ Time");
+  printf("---- LSM6DSL FIFO Rápida SPI (Solo Accel Z) Demo ----\r\n");
+      MEMS_Init_SPI_FIFO_Fast_AccelZ(); // Llama a la nueva inicialización
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  // En tu bucle principal (ej. dentro de while(1))
-	  LSM6DSL_AxesRaw_t axes_acc;
-	  uint8_t drdy_status = 0;
-	  int32_t ret_status; // Variable para guardar el código de retorno
-
-	  // Esperar a que los datos del acelerómetro estén listos
-	  // En el bucle principal, después de detectar DRDY
-
-	      LSM6DSL_ACC_GetAxesRaw(&MotionSensor, &axes_acc);
-	      printf("%d %d %d %d\r\n", axes_acc.x, axes_acc.y, axes_acc.z, difftime);
-
-
-
-	  // Añadir delay para controlar la frecuencia de lectura general
-	  HAL_Delay(2); // Ejemplo: leer cada 100ms
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
+	  Read_Process_FIFO_AccelZ_SPI(); // Llama a la función de chequeo
+	  printf("time: %d us\n\r", difftime/80);
+	 HAL_Delay(80);
+
+                   // La FIFO se seguirá llenando a 6.66kHz en segundo plano
   }
   /* USER CODE END 3 */
 }
@@ -199,7 +213,7 @@ int32_t SPI_Send(void *ignored_handle, uint8_t Reg, uint8_t *pData, uint16_t Len
 
     // Copiar los datos a escribir después del comando/dirección
     memcpy(&tx_buffer[1], pData, Length);
-    printf("BSP_SPI3_Send: Escribiendo Reg=0x%02X, tx_buffer[0]=0x%02X\n", Reg, tx_buffer[0]);
+   // printf("BSP_SPI3_Send: Escribiendo Reg=0x%02X, tx_buffer[0]=0x%02X\n", Reg, tx_buffer[0]);
     // Llamar a HAL para transmitir el buffer completo
     // Asumiendo que hspi3 es tu handle SPI global o accesible
 
@@ -265,127 +279,162 @@ int32_t SPI_Recv(void *handle, uint8_t reg, uint8_t *data, uint16_t len)
         }
     }
 }
-
-
-
-static void MEMS_Init(void)
+/**
+  * @brief Inicializa LSM6DSL vía SPI. Accel y FIFO a 6.66kHz. Solo Accel en FIFO. Modo Continuo.
+  */
+static void MEMS_Init_SPI_FIFO_Fast_AccelZ(void)
 {
-	LSM6DSL_IO_t io_ctx;
-	uint8_t id;
-	LSM6DSL_AxesRaw_t axes;
+    LSM6DSL_IO_t io_ctx;
+    uint8_t id;
+    int32_t status;
+    float sens_a;
 
-
-    /* Link SPI functions */
-    io_ctx.BusType = LSM6DSL_SPI_4WIRES_BUS;
+    printf("Configurando interfaz I/O SPI...\r\n");
     io_ctx.Init = BSP_SPI3_Init;
     io_ctx.DeInit = BSP_SPI3_DeInit;
-    io_ctx.ReadReg = SPI_Recv;
+    io_ctx.BusType = LSM6DSL_SPI_4WIRES_BUS;
+    io_ctx.Address = 0;
     io_ctx.WriteReg = SPI_Send;
+    io_ctx.ReadReg = SPI_Recv;
     io_ctx.GetTick = BSP_GetTick;
 
-	LSM6DSL_RegisterBusIO(&MotionSensor, &io_ctx);
-	/* Read the LSM6DSL WHO_AM_I register */
-	LSM6DSL_ReadID(&MotionSensor, &id);
-	if (id != LSM6DSL_ID) {
-		Error_Handler();
-	}
-	/* Initialize the LSM6DSL sensor */
-	LSM6DSL_Init(&MotionSensor);
+    status = LSM6DSL_RegisterBusIO(&MotionSensor, &io_ctx);
+    if (status != LSM6DSL_OK) { printf("Error: RegisterBusIO (%ld)\r\n", status); Error_Handler(); return; }
 
-	// En MEMS_Init, después de LSM6DSL_Init y ANTES de llamar a Enable
-	uint8_t test_val_write = 0x38; // Valor de prueba (Ej: 26Hz, 4g)
-	uint8_t test_val_read = 0;
-	printf("Intentando escritura directa a CTRL1_XL (0x10) con valor 0x%02X\r\n", test_val_write);
+    printf("Leyendo WHO_AM_I via SPI...\r\n");
+    status = LSM6DSL_ReadID(&MotionSensor, &id);
+    if (status != LSM6DSL_OK) { printf("Error: ReadID (%ld)\r\n", status); Error_Handler(); return; }
 
-	// Llama a tu función WriteReg (que usa BSP_SPI3_Send internamente)
-	if (LSM6DSL_Write_Reg(&MotionSensor, LSM6DSL_CTRL1_XL, test_val_write) == LSM6DSL_OK) {
-	    printf("LSM6DSL_Write_Reg reportó éxito.\r\n");
-	    HAL_Delay(5); // Pequeña pausa
+    printf("WHO_AM_I = 0x%02X\r\n", id);
+    if (id != LSM6DSL_ID) { printf("Error: ID incorrecto (0x%02X)\r\n", LSM6DSL_ID); Error_Handler(); return; }
 
-	    // Lee de vuelta usando tu función ReadReg (que usa BSP_SPI3_Recv)
-	    if (LSM6DSL_Read_Reg(&MotionSensor, LSM6DSL_CTRL1_XL, &test_val_read) == LSM6DSL_OK) {
-	         printf("Leído de vuelta CTRL1_XL = 0x%02X\r\n", test_val_read);
-	         if (test_val_read == test_val_write) {
-	             printf("¡ÉXITO en Escritura/Lectura Directa!\r\n");
-	         } else {
-	             printf("¡FALLO en Escritura/Lectura Directa! Valor no coincide.\r\n"); // <-- Probablemente aquí está el problema
-	         }
-	    } else {
-	        printf("¡Error leyendo de vuelta CTRL1_XL!\r\n");
-	    }
-	} else {
-	     printf("¡LSM6DSL_Write_Reg FALLÓ!\r\n"); // <-- O aquí si la escritura ya da error
-	}
-	// Detener aquí o continuar con el resto de la inicialización
-	// while(1); // Puedes detener aquí para analizar
+    printf("LSM6DSL detectado! Inicializando...\r\n");
+    status = LSM6DSL_Init(&MotionSensor);
+    if (status != LSM6DSL_OK) { printf("Error: Init (%ld)\r\n", status); Error_Handler(); return; }
 
-	/* Configure the LSM6DSL accelerometer (ODR, scale and interrupt) */
-	LSM6DSL_ACC_SetOutputDataRate(&MotionSensor, 6660); /* 26 Hz */
-	LSM6DSL_ACC_SetFullScale(&MotionSensor, 4); /* [-4000mg; +4000mg] */
-	LSM6DSL_ACC_Set_INT1_DRDY(&MotionSensor, ENABLE); /* Enable DRDY */
-	LSM6DSL_ACC_GetAxesRaw(&MotionSensor, &axes); /* Clear DRDY */
-	/* Start the LSM6DSL accelerometer */
-	LSM6DSL_ACC_Enable(&MotionSensor);
+    // --- Configurar Sensores ---
+    printf("Configurando Accel a 6.66 kHz, Gyro OFF...\r\n");
+    status = LSM6DSL_ACC_SetOutputDataRate(&MotionSensor, 6660.0f); // <-- Max ODR
+    if (status != LSM6DSL_OK) { printf("Error ACC Set ODR (%ld)\r\n", status); Error_Handler(); return; }
+    status = LSM6DSL_ACC_SetFullScale(&MotionSensor, 4); // +/- 4g (Ajusta si necesitas)
+    if (status != LSM6DSL_OK) { printf("Error ACC Set FS (%ld)\r\n", status); Error_Handler(); return; }
 
+    // Apagar Gyro completamente
+    status = LSM6DSL_GYRO_Disable(&MotionSensor); // Esto pone ODR a OFF
+    if (status != LSM6DSL_OK) { printf("Error GYRO Disable (%ld)\r\n", status); Error_Handler(); return; }
 
-
-#if 0
-    // Asume que MotionSensor es una variable global o estática de tipo LSM6DSL_Object_t
-    if (LSM6DSL_RegisterBusIO(&MotionSensor, &io_ctx) != LSM6DSL_OK) {
-        Error_Handler(); // Añade chequeos de error
+    // Obtener y cachear sensibilidad Accel
+    if (LSM6DSL_ACC_GetSensitivity(&MotionSensor, &cached_acc_sensitivity) != LSM6DSL_OK) {
+        printf("Error obteniendo sensibilidad inicial.\r\n"); Error_Handler(); return;
     }
+    printf("Sensibilidad Accel Cacheada: %.3f mg/LSB\r\n", cached_acc_sensitivity);
 
-    /* Read WHO_AM_I */
-    if (LSM6DSL_ReadID(&MotionSensor, &id) != LSM6DSL_OK) {
-         Error_Handler();
-    }
-    //if (id != LSM6DSL_ID) {
-    //    Error_Handler(); // Error si el ID no coincide
-    //}
+    // --- Configurar FIFO ---
+    printf("Configurando FIFO via SPI (6.66kHz, Accel Only, Stream Mode)...\r\n");
+    status = LSM6DSL_FIFO_Set_ODR_Value(&MotionSensor, 6660.0f); // <-- Max FIFO ODR
+    if (status != LSM6DSL_OK) { printf("Error FIFO Set ODR (%ld)\r\n", status); Error_Handler(); return; }
 
-    /* Initialize the sensor (deja los sensores apagados) */
-    if (LSM6DSL_Init(&MotionSensor) != LSM6DSL_OK) {
-         Error_Handler();
-    }
+    status = LSM6DSL_FIFO_ACC_Set_Decimation(&MotionSensor, LSM6DSL_FIFO_XL_NO_DEC); // Accel en FIFO
+    if (status != LSM6DSL_OK) { printf("Error FIFO ACC Decim (%ld)\r\n", status); Error_Handler(); return; }
+    status = LSM6DSL_FIFO_GYRO_Set_Decimation(&MotionSensor, LSM6DSL_FIFO_GY_DISABLE); // Gyro NO en FIFO
+    if (status != LSM6DSL_OK) { printf("Error FIFO GYRO Decim (%ld)\r\n", status); Error_Handler(); return; }
 
+    // Modo Continuo (Stream)
+    status = LSM6DSL_FIFO_Set_Mode(&MotionSensor, LSM6DSL_STREAM_MODE);
+    if (status != LSM6DSL_OK) { printf("Error FIFO Set Mode (%ld)\r\n", status); Error_Handler(); return; }
 
-    /* Configure Gyroscope (¡Añadir si lo vas a usar!) */
-    // if (LSM6DSL_GYRO_SetOutputDataRate(&MotionSensor, 104.0f) != LSM6DSL_OK) { Error_Handler(); }
-    // if (LSM6DSL_GYRO_SetFullScale(&MotionSensor, 500) != LSM6DSL_OK) { Error_Handler(); }
-
-
-    /* Enable Accelerometer (Ahora escribe el ODR guardado y lo enciende) */
-    int32_t enable_ret = LSM6DSL_ACC_Enable(&MotionSensor);
-    if (enable_ret != LSM6DSL_OK) {
-        printf("¡¡ERROR: LSM6DSL_ACC_Enable falló con código %ld!!\r\n", enable_ret);
-        Error_Handler();
-    } else {
-        printf("LSM6DSL_ACC_Enable reportó éxito.\r\n"); // Confirmar que se cree exitoso
-    }
-
-    // En MEMS_Init, justo después de verificar LSM6DSL_ACC_Enable
-    uint8_t ctrl1_xl_val = 0;
-    HAL_Delay(1); // Pequeña pausa
-    if (LSM6DSL_Read_Reg(&MotionSensor, LSM6DSL_CTRL1_XL, &ctrl1_xl_val) == LSM6DSL_OK) {
-        printf("MEMS_Init: CTRL1_XL leído DESPUÉS de Enable = 0x%02X\r\n", ctrl1_xl_val);
-        // Para 26Hz (LSM6DSL_XL_ODR_26Hz = 0x03), los bits 7-4 deberían ser 0011.
-        // Así que esperarías ver algo como 0x3? (ej: 0x30, 0x34, etc.)
-    } else {
-        printf("MEMS_Init: ¡Error leyendo CTRL1_XL después de Enable!\r\n");
-    }
-    HAL_Delay(50); // Pausa antes de entrar al bucle principal
-    /* Enable Gyroscope (¡Añadir si lo configuraste!) */
-    // if (LSM6DSL_GYRO_Enable(&MotionSensor) != LSM6DSL_OK) { Error_Handler(); }
+    // Resetear FIFO por si acaso antes de empezar
+    lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
+    HAL_Delay(1);
+    lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
 
 
-    if ( LSM6DSL_ACC_Enable_6D_Orientation(&MotionSensor, 0) != LSM6DSL_OK) {
-         Error_Handler();
-    }
+    printf("Activando Acelerómetro...\r\n");
+    status = LSM6DSL_ACC_Enable(&MotionSensor);
+    if (status != LSM6DSL_OK) { printf("Error ACC Enable (%ld)\r\n", status); Error_Handler(); return; }
 
-#endif
-    // HAL_Delay(20); // Opcional: Pequeña pausa para asegurar la primera muestra
+    printf("LSM6DSL FIFO SPI configurada en modo STREAM a 6.66 kHz (Solo Accel).\r\n");
+    lsm6dsl_init_status_spi = 1;
 }
 
+
+/**
+  * @brief Lee chunks de FIFO, procesa y muestra solo el eje Z del acelerómetro.
+  */
+static void Read_Process_FIFO_AccelZ_SPI(void)
+{
+    if (!lsm6dsl_init_status_spi || cached_acc_sensitivity == 0.0f) { return; }
+
+    uint16_t num_words_available = 0;
+    uint16_t words_to_read_this_time = 0;
+    uint16_t bytes_to_read_this_time = 0;
+    uint16_t num_sets_available = 0;
+    uint16_t num_sets_to_read = 0;
+    uint16_t i;
+    int32_t status;
+    uint8_t fifo_status_reg2;
+
+    // Leer STATUS2 para checkear overrun
+    status = lsm6dsl_read_reg(&(MotionSensor.Ctx), LSM6DSL_FIFO_STATUS2, &fifo_status_reg2, 1);
+    if (status != LSM6DSL_OK) { printf("E:ReadStatus2(%ld)\r\n", status); return; }
+
+    if (fifo_status_reg2 & 0x40) { // OVER_RUN flag
+        printf("OVF!\r\n");
+        lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE); HAL_Delay(1);
+        lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
+        return;
+    }
+
+    // Obtener nivel FIFO
+    status = LSM6DSL_FIFO_Get_Num_Samples(&MotionSensor, &num_words_available);
+    if (status != LSM6DSL_OK) { printf("E:GetSamples(%ld)\r\n", status); return; }
+
+    if (num_words_available == 0) return; // Nada que leer
+
+    // Calcular sets disponibles (Accel only = 3 palabras/set)
+    num_sets_available = num_words_available / ACCEL_WORDS_PER_SET;
+
+    if (num_sets_available == 0) return; // No hay sets completos
+
+    // Determinar cuántos sets leer en este chunk (limitado por buffer local)
+    num_sets_to_read = (num_sets_available > MAX_SETS_PER_READ) ? MAX_SETS_PER_READ : num_sets_available;
+    bytes_to_read_this_time = num_sets_to_read * ACCEL_BYTES_PER_SET;
+
+    // Leer el chunk
+    if (bytes_to_read_this_time > 0) {
+    	time = TIM2->CNT;
+        status = lsm6dsl_read_reg(&(MotionSensor.Ctx), LSM6DSL_FIFO_DATA_OUT_L, fifo_chunk_buffer, bytes_to_read_this_time);
+        difftime = TIM2->CNT - time;
+        if (status != LSM6DSL_OK) {
+            printf("E:ReadFIFO(%uB,%ld)\r\n", bytes_to_read_this_time, status);
+            lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE); HAL_Delay(1);
+            lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
+            return;
+        }
+
+        // Procesar el chunk (SOLO EJE Z)
+        // printf("Proc %u sets...\r\n", num_sets_to_read); // Demasiado verbose
+        for (i = 0; i < num_sets_to_read; i++) {
+            uint8_t* pSetData = &fifo_chunk_buffer[i * ACCEL_BYTES_PER_SET];
+            int16_t acc_raw_x;
+            int32_t acc_mg_x;
+
+            // Desempaquetar SOLO Z (índices 4 y 5 del set de 6 bytes)
+            acc_raw_x = (int16_t)(((uint16_t)pSetData[1] << 8) | pSetData[0]);
+
+            // Convertir Z
+            acc_mg_x = (int32_t)((float)acc_raw_x * cached_acc_sensitivity);
+
+            // Imprimir SOLO Z (ejemplo, limitar frecuencia de impresión)
+            if (i == 0) { // Imprime solo el primer Z del chunk leído
+                 printf("Ax = %5ld mg (%u sets)\r\n", acc_mg_x, num_sets_to_read);
+            }
+            // ... Aquí usarías acc_mg_z para tu aplicación ...
+        }
+    }
+}
+
+/* USER CODE END 4 */
 
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {

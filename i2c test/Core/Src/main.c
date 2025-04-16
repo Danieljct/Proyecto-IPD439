@@ -38,28 +38,6 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-// Define max FIFO size in bytes and words
-#define FIFO_MAX_BYTES      4096
-#define FIFO_MAX_WORDS      (FIFO_MAX_BYTES / 2)
-#define ACCEL_WORDS_PER_SET 3 // Ax, Ay, Az (16 bits cada uno)
-#define ACCEL_BYTES_PER_SET (ACCEL_WORDS_PER_SET * 2)
-#define FIFO_MAX_SETS       (FIFO_MAX_WORDS / ACCEL_WORDS_PER_SET) // Max sets (~682)
-
-// --- Tamaño del buffer de lectura local ---
-// Leer chunks más pequeños puede ayudar a evitar bloqueos largos
-// Ajusta según la memoria disponible y la velocidad de procesamiento
-// Un valor entre 256 y 1024 podría ser un buen punto de partida.
-#define READ_BUFFER_BYTES   4096 // Leer hasta 512 bytes (~85 sets) a la vez
-#if (READ_BUFFER_BYTES > FIFO_MAX_BYTES)
-#error READ_BUFFER_BYTES cannot be larger than FIFO_MAX_BYTES
-#endif
-#define MAX_SETS_PER_READ   (READ_BUFFER_BYTES / ACCEL_BYTES_PER_SET)
-// --- Configuración Watermark ---
-#define FIFO_WATERMARK_WORDS 2020 // Umbral cercano al máximo (Max FTH es 2047)
-#if (FIFO_WATERMARK_WORDS > 2047)
-#error FIFO_WATERMARK_WORDS cannot exceed 2047
-#endif
-
 
 /* USER CODE END PD */
 
@@ -71,24 +49,16 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t fifo_data_buffer[FIFO_MAX_BYTES]; // Renombrado y único buffer necesario
-volatile uint8_t fifo_int_triggered = 0; // Flag para la interrupción
-float cached_acc_sensitivity = 0.0f; // Cache sensitivity
-uint8_t fifo_chunk_buffer[READ_BUFFER_BYTES];
 LSM6DSL_Object_t MotionSensor;
 volatile uint32_t dataRdyIntReceived;
 uint32_t time, difftime;
-uint8_t lsm6dsl_init_status_spi = 0;
 
-uint8_t full_fifo_buffer[FIFO_MAX_BYTES];
-uint8_t fifo_was_full_last_time = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-static void MEMS_Init_SPI_FIFO_Int(void);
-static void Read_Full_FIFO_And_Measure_Time_SPI(void);
+static void MEMS_Init(void);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -110,7 +80,7 @@ int main(void)
   /* MCU Configuration--------------------------------------------------------*/
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-   HAL_Init();
+  HAL_Init();
 
   /* USER CODE BEGIN Init */
 
@@ -130,25 +100,33 @@ int main(void)
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim2);
-  printf("---- LSM6DSL FIFO Rápida SPI (Solo Accel Z) Demo ----\r\n");
-  MEMS_Init_SPI_FIFO_Int();
-
+  dataRdyIntReceived = 0;
+  MEMS_Init();
+  printf("AccX AccY AccZ Time");
   /* USER CODE END 2 */
 
   /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  // En tu bucle principal (ej. dentro de while(1))
+	  LSM6DSL_AxesRaw_t axes_acc;
+	  uint8_t drdy_status = 0;
+	  int32_t ret_status; // Variable para guardar el código de retorno
+
+	  // Esperar a que los datos del acelerómetro estén listos
+	  // En el bucle principal, después de detectar DRDY
+
+	      LSM6DSL_ACC_GetAxesRaw(&MotionSensor, &axes_acc);
+	      printf("%d %d %d %d\r\n", axes_acc.x, axes_acc.y, axes_acc.z, difftime);
+
+
+
+	  // Añadir delay para controlar la frecuencia de lectura general
+	  HAL_Delay(2); // Ejemplo: leer cada 100ms
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	  if (fifo_int_triggered)
-	     {
-	         fifo_int_triggered = 0; // Resetear flag PRIMERO
-	         Read_Full_FIFO_And_Measure_Time_SPI(); // Llamar a la función de lectura/proceso
-	     }
-
-	     // Bucle principal puede hacer otras tareas o un pequeño delay
-	     HAL_Delay(1); // Ceder algo de tiempo
   }
   /* USER CODE END 3 */
 }
@@ -209,11 +187,8 @@ int32_t SPI_Send(void *ignored_handle, uint8_t Reg, uint8_t *pData, uint16_t Len
     // Tamaño total de la transmisión SPI (1 byte de dirección + Length bytes de datos)
     uint16_t transfer_size = 1 + Length;
     int32_t ret = BSP_ERROR_NONE; // 0
-    // Dentro de BSP_SPI3_Send, antes de HAL_SPI_Transmit
 
     // Buffer local para la transmisión completa
-    // Asegúrate de que sea lo suficientemente grande para la escritura más larga posible.
-    // O usa asignación dinámica si prefieres y tienes heap configurado.
     uint8_t tx_buffer[transfer_size];
 
     // Preparar comando de escritura (MSB=0 para escribir)
@@ -221,7 +196,7 @@ int32_t SPI_Send(void *ignored_handle, uint8_t Reg, uint8_t *pData, uint16_t Len
 
     // Copiar los datos a escribir después del comando/dirección
     memcpy(&tx_buffer[1], pData, Length);
-   // printf("BSP_SPI3_Send: Escribiendo Reg=0x%02X, tx_buffer[0]=0x%02X\n", Reg, tx_buffer[0]);
+    printf("BSP_SPI3_Send: Escribiendo Reg=0x%02X, tx_buffer[0]=0x%02X\n", Reg, tx_buffer[0]);
     // Llamar a HAL para transmitir el buffer completo
     // Asumiendo que hspi3 es tu handle SPI global o accesible
 
@@ -288,199 +263,133 @@ int32_t SPI_Recv(void *handle, uint8_t reg, uint8_t *data, uint16_t len)
     }
 }
 
-static void MEMS_Init_SPI_FIFO_Int(void)
-{
-    LSM6DSL_IO_t io_ctx;
-    uint8_t id;
-    int32_t status;
-    lsm6dsl_int1_route_t int1_route; // Para configurar INT1
-    float sens_a;
 
-    printf("Configurando interfaz I/O SPI...\r\n");
-    // Config io_ctx (SPI_4WIRES, SPI_Send/Recv, etc.)
+
+static void MEMS_Init(void)
+{
+	LSM6DSL_IO_t io_ctx;
+	uint8_t id;
+	LSM6DSL_AxesRaw_t axes;
+
+
+    /* Link SPI functions */
+    io_ctx.BusType = LSM6DSL_SPI_4WIRES_BUS;
     io_ctx.Init = BSP_SPI3_Init;
     io_ctx.DeInit = BSP_SPI3_DeInit;
-    io_ctx.BusType = LSM6DSL_SPI_4WIRES_BUS;
-    io_ctx.Address = 0;
-    io_ctx.WriteReg = SPI_Send;
     io_ctx.ReadReg = SPI_Recv;
+    io_ctx.WriteReg = SPI_Send;
     io_ctx.GetTick = BSP_GetTick;
 
-    status = LSM6DSL_RegisterBusIO(&MotionSensor, &io_ctx);
-    if (status != LSM6DSL_OK) { printf("E:RegBusIO(%ld)\r\n", status); Error_Handler(); return; }
+	LSM6DSL_RegisterBusIO(&MotionSensor, &io_ctx);
+	/* Read the LSM6DSL WHO_AM_I register */
+	LSM6DSL_ReadID(&MotionSensor, &id);
+	if (id != LSM6DSL_ID) {
+		Error_Handler();
+	}
+	/* Initialize the LSM6DSL sensor */
+	LSM6DSL_Init(&MotionSensor);
 
-    printf("Leyendo WHO_AM_I...\r\n");
-    status = LSM6DSL_ReadID(&MotionSensor, &id);
-    if (status != LSM6DSL_OK) { printf("E:ReadID(%ld)\r\n", status); Error_Handler(); return; }
-    printf("WHO_AM_I = 0x%02X\r\n", id);
-    if (id != LSM6DSL_ID) { printf("E:WrongID\r\n"); Error_Handler(); return; }
+	// En MEMS_Init, después de LSM6DSL_Init y ANTES de llamar a Enable
+	uint8_t test_val_write = 0x38; // Valor de prueba (Ej: 26Hz, 4g)
+	uint8_t test_val_read = 0;
+	printf("Intentando escritura directa a CTRL1_XL (0x10) con valor 0x%02X\r\n", test_val_write);
 
-    printf("LSM6DSL detectado! Inicializando...\r\n");
-    status = LSM6DSL_Init(&MotionSensor);
-    if (status != LSM6DSL_OK) { printf("E:Init(%ld)\r\n", status); Error_Handler(); return; }
+	// Llama a tu función WriteReg (que usa BSP_SPI3_Send internamente)
+	if (LSM6DSL_Write_Reg(&MotionSensor, LSM6DSL_CTRL1_XL, test_val_write) == LSM6DSL_OK) {
+	    printf("LSM6DSL_Write_Reg reportó éxito.\r\n");
+	    HAL_Delay(5); // Pequeña pausa
 
-    // --- Configurar Sensores ---
-    printf("Configurando Accel a 6.66 kHz, Gyro OFF...\r\n");
-    status = LSM6DSL_ACC_SetOutputDataRate(&MotionSensor, 6660.0f);
-    if (status != LSM6DSL_OK) { printf("E:AccODR(%ld)\r\n", status); Error_Handler(); return; }
-    status = LSM6DSL_ACC_SetFullScale(&MotionSensor, 4);
-    if (status != LSM6DSL_OK) { printf("E:AccFS(%ld)\r\n", status); Error_Handler(); return; }
-    status = LSM6DSL_GYRO_Disable(&MotionSensor);
-    if (status != LSM6DSL_OK) { printf("E:GyroDis(%ld)\r\n", status); Error_Handler(); return; }
-    if (LSM6DSL_ACC_GetSensitivity(&MotionSensor, &cached_acc_sensitivity) != LSM6DSL_OK) {
-         printf("E:GetSens\r\n"); Error_Handler(); return;
+	    // Lee de vuelta usando tu función ReadReg (que usa BSP_SPI3_Recv)
+	    if (LSM6DSL_Read_Reg(&MotionSensor, LSM6DSL_CTRL1_XL, &test_val_read) == LSM6DSL_OK) {
+	         printf("Leído de vuelta CTRL1_XL = 0x%02X\r\n", test_val_read);
+	         if (test_val_read == test_val_write) {
+	             printf("¡ÉXITO en Escritura/Lectura Directa!\r\n");
+	         } else {
+	             printf("¡FALLO en Escritura/Lectura Directa! Valor no coincide.\r\n"); // <-- Probablemente aquí está el problema
+	         }
+	    } else {
+	        printf("¡Error leyendo de vuelta CTRL1_XL!\r\n");
+	    }
+	} else {
+	     printf("¡LSM6DSL_Write_Reg FALLÓ!\r\n"); // <-- O aquí si la escritura ya da error
+	}
+	// Detener aquí o continuar con el resto de la inicialización
+	// while(1); // Puedes detener aquí para analizar
+
+	/* Configure the LSM6DSL accelerometer (ODR, scale and interrupt) */
+	LSM6DSL_ACC_SetOutputDataRate(&MotionSensor, 6660); /* 26 Hz */
+	LSM6DSL_ACC_SetFullScale(&MotionSensor, 4); /* [-4000mg; +4000mg] */
+	LSM6DSL_ACC_Set_INT1_DRDY(&MotionSensor, ENABLE); /* Enable DRDY */
+	LSM6DSL_ACC_GetAxesRaw(&MotionSensor, &axes); /* Clear DRDY */
+	/* Start the LSM6DSL accelerometer */
+	LSM6DSL_ACC_Enable(&MotionSensor);
+
+
+
+#if 0
+    // Asume que MotionSensor es una variable global o estática de tipo LSM6DSL_Object_t
+    if (LSM6DSL_RegisterBusIO(&MotionSensor, &io_ctx) != LSM6DSL_OK) {
+        Error_Handler(); // Añade chequeos de error
     }
-    printf("Sensibilidad Accel: %.3f mg/LSB\r\n", cached_acc_sensitivity);
 
-    // --- Configurar FIFO ---
-    printf("Configurando FIFO (6.66kHz, Accel Only, Stream Mode, WTM=%d, StopOnWTM=0)...\r\n", FIFO_WATERMARK_WORDS);
-    status = LSM6DSL_FIFO_Set_ODR_Value(&MotionSensor, 6660.0f);
-    if (status != LSM6DSL_OK) { printf("E:FifoODR(%ld)\r\n", status); Error_Handler(); return; }
-    status = LSM6DSL_FIFO_ACC_Set_Decimation(&MotionSensor, LSM6DSL_FIFO_XL_NO_DEC);
-    if (status != LSM6DSL_OK) { printf("E:FifoAccDec(%ld)\r\n", status); Error_Handler(); return; }
-    status = LSM6DSL_FIFO_GYRO_Set_Decimation(&MotionSensor, LSM6DSL_FIFO_GY_DISABLE);
-    if (status != LSM6DSL_OK) { printf("E:FifoGyroDec(%ld)\r\n", status); Error_Handler(); return; }
+    /* Read WHO_AM_I */
+    if (LSM6DSL_ReadID(&MotionSensor, &id) != LSM6DSL_OK) {
+         Error_Handler();
+    }
+    //if (id != LSM6DSL_ID) {
+    //    Error_Handler(); // Error si el ID no coincide
+    //}
 
-    // Configurar Nivel de Watermark
-    status = LSM6DSL_FIFO_Set_Watermark_Level(&MotionSensor, FIFO_WATERMARK_WORDS);
-    if (status != LSM6DSL_OK) { printf("E:SetWTM(%ld)\r\n", status); Error_Handler(); return; }
+    /* Initialize the sensor (deja los sensores apagados) */
+    if (LSM6DSL_Init(&MotionSensor) != LSM6DSL_OK) {
+         Error_Handler();
+    }
 
-    // Asegurarse que "Stop on Watermark" está DESACTIVADO (para modo Stream real)
-    status = lsm6dsl_fifo_stop_on_wtm_set(&(MotionSensor.Ctx), 0); // 0 = Disabled
-     if (status != LSM6DSL_OK) { printf("E:StopOnWTM(%ld)\r\n", status); Error_Handler(); return; }
 
-    // --- Configurar Interrupción INT1 para Watermark ---
-    // Asegúrate que el pin EXTI (LSM6DSL_INT1_PIN) está configurado en CubeMX
-    printf("Configurando INT1 para FIFO Watermark...\r\n");
-    status = lsm6dsl_pin_int1_route_get(&(MotionSensor.Ctx), &int1_route);
-     if (status != LSM6DSL_OK) { printf("E:GetInt1Route(%ld)\r\n", status); Error_Handler(); return; }
-    // Habilitar SOLO la interrupción de watermark en INT1
-    int1_route.int1_fth = 1;
-    int1_route.int1_fifo_ovr = 0; // Deshabilitar OVF en INT1 (lo chequeamos por status)
-    int1_route.int1_full_flag = 0;
-    int1_route.int1_drdy_xl = 0; // Deshabilitar DRDY si no se usa
-    //... deshabilita otras fuentes si es necesario ...
-    status = lsm6dsl_pin_int1_route_set(&(MotionSensor.Ctx), int1_route);
-    if (status != LSM6DSL_OK) { printf("E:SetInt1Route(%ld)\r\n", status); Error_Handler(); return; }
-    // Puedes configurar Latch/Pulse, Active High/Low aquí si es necesario
-    // lsm6dsl_int_notification_set(...)
-    // lsm6dsl_pin_polarity_set(...)
+    /* Configure Gyroscope (¡Añadir si lo vas a usar!) */
+    // if (LSM6DSL_GYRO_SetOutputDataRate(&MotionSensor, 104.0f) != LSM6DSL_OK) { Error_Handler(); }
+    // if (LSM6DSL_GYRO_SetFullScale(&MotionSensor, 500) != LSM6DSL_OK) { Error_Handler(); }
 
-    // --- Iniciar operación ---
-    // Poner en modo Stream (esto también debería limpiar la FIFO)
-    status = LSM6DSL_FIFO_Set_Mode(&MotionSensor, LSM6DSL_STREAM_MODE);
-    if (status != LSM6DSL_OK) { printf("E:FifoSetMode(%ld)\r\n", status); Error_Handler(); return; }
 
-    printf("Activando Acelerómetro...\r\n");
-    status = LSM6DSL_ACC_Enable(&MotionSensor);
-    if (status != LSM6DSL_OK) { printf("E:AccEnable(%ld)\r\n", status); Error_Handler(); return; }
+    /* Enable Accelerometer (Ahora escribe el ODR guardado y lo enciende) */
+    int32_t enable_ret = LSM6DSL_ACC_Enable(&MotionSensor);
+    if (enable_ret != LSM6DSL_OK) {
+        printf("¡¡ERROR: LSM6DSL_ACC_Enable falló con código %ld!!\r\n", enable_ret);
+        Error_Handler();
+    } else {
+        printf("LSM6DSL_ACC_Enable reportó éxito.\r\n"); // Confirmar que se cree exitoso
+    }
 
-    printf("LSM6DSL configurado para Int. Watermark (%d words) a 6.66kHz (Solo Accel, Stream Mode).\r\n", FIFO_WATERMARK_WORDS);
-    printf("Esperando interrupciones en pin %d...\n", LSM6DSL_INT1_PIN);
-    lsm6dsl_init_status_spi = 1;
-    fifo_int_triggered = 0; // Asegurar flag limpio
+    // En MEMS_Init, justo después de verificar LSM6DSL_ACC_Enable
+    uint8_t ctrl1_xl_val = 0;
+    HAL_Delay(1); // Pequeña pausa
+    if (LSM6DSL_Read_Reg(&MotionSensor, LSM6DSL_CTRL1_XL, &ctrl1_xl_val) == LSM6DSL_OK) {
+        printf("MEMS_Init: CTRL1_XL leído DESPUÉS de Enable = 0x%02X\r\n", ctrl1_xl_val);
+        // Para 26Hz (LSM6DSL_XL_ODR_26Hz = 0x03), los bits 7-4 deberían ser 0011.
+        // Así que esperarías ver algo como 0x3? (ej: 0x30, 0x34, etc.)
+    } else {
+        printf("MEMS_Init: ¡Error leyendo CTRL1_XL después de Enable!\r\n");
+    }
+    HAL_Delay(50); // Pausa antes de entrar al bucle principal
+    /* Enable Gyroscope (¡Añadir si lo configuraste!) */
+    // if (LSM6DSL_GYRO_Enable(&MotionSensor) != LSM6DSL_OK) { Error_Handler(); }
+
+
+    if ( LSM6DSL_ACC_Enable_6D_Orientation(&MotionSensor, 0) != LSM6DSL_OK) {
+         Error_Handler();
+    }
+
+#endif
+    // HAL_Delay(20); // Opcional: Pequeña pausa para asegurar la primera muestra
 }
 
 
-/**
-  * @brief Lee la FIFO completa cuando se activa por interrupción y mide el tiempo.
-  */
-static void Read_Full_FIFO_And_Measure_Time_SPI(void)
-{
-    if (!lsm6dsl_init_status_spi || cached_acc_sensitivity == 0.0f) { return; }
-
-    uint16_t num_words_available = 0;
-    uint16_t bytes_to_read = 0;
-    int32_t status;
-    uint8_t fifo_status_reg2;
-    uint32_t start_time, read_duration_ticks;
-    uint32_t read_duration_us;
-
-    // --- Leer nivel y estado ---
-    // Es buena idea leer el nivel exacto aunque la WTM haya saltado
-    status = LSM6DSL_FIFO_Get_Num_Samples(&MotionSensor, &num_words_available);
-    if (status != LSM6DSL_OK) { printf("E:GetIntSamples(%ld)\r\n", status); return; }
-
-    // Leer STATUS2 para checkear overrun por si acaso
-     status = lsm6dsl_read_reg(&(MotionSensor.Ctx), LSM6DSL_FIFO_STATUS2, &fifo_status_reg2, 1);
-     if (status == LSM6DSL_OK && (fifo_status_reg2 & 0x40)) {
-        printf("OVF! detectado justo antes de leer!\r\n");
-        // Resetear FIFO y salir
-        lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE); HAL_Delay(1);
-        lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
-        return;
-     }
-
-    // --- Proceder a leer ---
-    bytes_to_read = num_words_available * 2;
-    if (bytes_to_read == 0) {
-        printf("WARN: Interrupción pero 0 muestras?\r\n");
-        // Podríamos necesitar resetear la FIFO aquí también si la interrupción no se borra
-        return;
-    }
-    if (bytes_to_read > FIFO_MAX_BYTES) {
-        printf("WARN: Nivel FIFO (%u) > Buffer (%d)! Leyendo max.\r\n", bytes_to_read, FIFO_MAX_BYTES);
-        bytes_to_read = FIFO_MAX_BYTES;
-        num_words_available = bytes_to_read / 2; // Ajustar palabras
-    }
-
-    printf("INT! Leyendo %u palabras (%u bytes)...\r\n", num_words_available, bytes_to_read);
-
-    // --- Medir Tiempo ---
-    start_time = TIM2->CNT;
-    status = lsm6dsl_read_reg(&(MotionSensor.Ctx), LSM6DSL_FIFO_DATA_OUT_L, fifo_data_buffer, bytes_to_read);
-    read_duration_ticks = TIM2->CNT - start_time; // <- difftime ahora es local
-    // --- Fin Medición ---
-
-    // Calcular tiempo en us (¡Asegúrate que SystemCoreClock está bien definido!)
-    read_duration_us = read_duration_ticks / (80);
-    printf("Tiempo lectura: %lu ticks (~%lu us)\r\n", read_duration_ticks, read_duration_us);
-
-    if (status != LSM6DSL_OK) {
-        printf("E:ReadFIFO(%uB,%ld)\r\n", bytes_to_read, status);
-        // Resetear FIFO en caso de error
-        lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE); HAL_Delay(1);
-        lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
-        return;
-    }
-
-    // --- Procesar y mostrar (solo Z) ---
-    uint16_t sets_leidos = num_words_available / ACCEL_WORDS_PER_SET;
-    printf("--- Procesando %u sets (Solo Accel Z) ---\r\n", sets_leidos);
-    for (uint16_t i = 0; i < sets_leidos; i++) {
-         if (i < 5 || i >= (sets_leidos - 5)) { // Primeros y últimos 5
-            uint8_t* pSetData = &fifo_data_buffer[i * ACCEL_BYTES_PER_SET];
-            int16_t acc_raw_z = (int16_t)(((uint16_t)pSetData[5] << 8) | pSetData[4]);
-            int32_t acc_mg_z = (int32_t)((float)acc_raw_z * cached_acc_sensitivity);
-            printf(" Set[%3u]: Az = %5ld mg\r\n", i, acc_mg_z);
-        }
-    }
-    printf("--- Fin Procesamiento ---\r\n");
-
-    // NOTA: En modo Stream, no necesitamos resetear la FIFO explícitamente
-    // después de leer, ya que sigue llenándose. La condición de interrupción
-    // debería borrarse al leer suficientes datos para bajar del umbral,
-    // o podríamos necesitar leer el registro fuente de la interrupción si está latcheada.
-    // Por simplicidad ahora, no la reseteamos aquí y confiamos en que el nivel baje.
-    // Si la interrupción sigue disparándose continuamente, podría ser necesario un reset
-    // o leer el registro fuente INT1_SRC / FUNC_SRC1 si la interrupción es latched.
-}
-
-
-/**
-  * @brief EXTI Line Detection Callback.
-  * @param GPIO_Pin Specifies the port pin connected to corresponding EXTI line.
-  * @retval None
-  */
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
-  // Asegúrate que el pin coincide con el conectado a INT1 del sensor
   if (GPIO_Pin == GPIO_PIN_0) {
-    fifo_int_triggered = 1; // Poner el flag para el bucle principal
-    // NO hacer lecturas SPI/I2C aquí dentro de la interrupción.
+    dataRdyIntReceived++;
   }
 }
-
 
 int _write(int fd, char * ptr, int len)
 {

@@ -1,17 +1,10 @@
-22:54:31 **** Incremental Build of configuration Debug for project test_sd ****
+17:46:07 **** Incremental Build of configuration Debug for project test_sd ****
 make -j4 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-arm-none-eabi-gcc -o "test_sd.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\test_sd\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="test_sd.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: test_sd.elf
- 
 arm-none-eabi-size  test_sd.elf 
-arm-none-eabi-objdump -h -S test_sd.elf  > "test_sd.list"
    text	   data	    bss	    dec	    hex	filename
-  61456	    492	   2556	  64504	   fbf8	test_sd.elf
+  70920	    492	   2556	  73968	  120f0	test_sd.elf
 Finished building: default.size.stdout
  
-Finished building: test_sd.list
- 
 
-22:54:34 Build Finished. 0 errors, 0 warnings. (took 2s.602ms)
+17:46:08 Build Finished. 0 errors, 0 warnings. (took 1s.193ms)
 

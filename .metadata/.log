@@ -8959,3 +8959,30 @@ java.lang.NullPointerException: Cannot read the array length because "containers
 	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1144)
 	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:642)
 	at java.base/java.lang.Thread.run(Thread.java:1583)
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 21:58:58.338
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 21:59:59.738
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 22:05:52.181
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 11 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 22:05:52.183
+!MESSAGE Existing sessions are:
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 22:05:52.184
+!MESSAGE Error - No active DSF-Session. tmpSessionId = 11 (contextManager row 121)
+
+!ENTRY com.st.stm32cube.ide.mcu.debug 4 0 2025-04-15 22:05:52.185
+!MESSAGE Existing sessions are:
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 22:07:23.425
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 22:07:43.830
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s
+
+!ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-15 22:08:31.432
+!MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\i2c test\Core\Startup\startup_stm32l476rgtx.s

@@ -19,6 +19,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "i2c.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -50,6 +51,8 @@
 /* USER CODE BEGIN PV */
 LSM6DSL_Object_t MotionSensor;
 volatile uint32_t dataRdyIntReceived;
+uint32_t time, difftime;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -94,10 +97,12 @@ int main(void)
   MX_GPIO_Init();
   MX_USART2_UART_Init();
   MX_I2C1_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
+  HAL_TIM_Base_Start(&htim2);
   dataRdyIntReceived = 0;
   MEMS_Init();
-  printf("AccX AccY AccZ");
+  printf("AccX AccY AccZ Time");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -113,7 +118,7 @@ int main(void)
 	  // En el bucle principal, después de detectar DRDY
 
 	      LSM6DSL_ACC_GetAxesRaw(&MotionSensor, &axes_acc);
-	      printf("%d %d %d\r\n", axes_acc.x, axes_acc.y, axes_acc.z);
+	      printf("%d %d %d %d\r\n", axes_acc.x, axes_acc.y, axes_acc.z, difftime);
 
 
 
@@ -198,7 +203,7 @@ int32_t SPI_Send(void *ignored_handle, uint8_t Reg, uint8_t *pData, uint16_t Len
     // Llamar a HAL para transmitir el buffer completo
     // Asumiendo que hspi3 es tu handle SPI global o accesible
 
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+    GPIOA->BSRR = GPIO_PIN_1 << 16; // Set pin to low
     if (HAL_SPI_Transmit(&hspi3, tx_buffer, transfer_size, BUS_SPI3_POLL_TIMEOUT*10) != HAL_OK)
     {
 
@@ -206,8 +211,7 @@ int32_t SPI_Send(void *ignored_handle, uint8_t Reg, uint8_t *pData, uint16_t Len
          printf("BSP_SPI3_Send: HAL_SPI_Transmit falló!\r\n");
          ret = BSP_ERROR_UNKNOWN_FAILURE; // O un código de error más específico
     }
-
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+    GPIOA->BSRR = GPIO_PIN_1; // Set pin to high
     // No necesitas recibir nada en una escritura pura (a menos que quieras verificar MISO)
 
     return ret;
@@ -239,9 +243,13 @@ int32_t SPI_Recv(void *handle, uint8_t reg, uint8_t *data, uint16_t len)
 
     // Llamar a HAL con buffers válidos
     // Asumiendo que hspi3 es tu handle SPI global o accesible
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+    time = TIM2->CNT;
+    //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
+    GPIOA->BSRR = GPIO_PIN_1<< 16; // Set pin to low
     HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(&hspi3, tx_buffer, rx_buffer, transfer_size, HAL_MAX_DELAY); // Usa un timeout adecuado
-   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+    GPIOA->BSRR = GPIO_PIN_1 ; // Set pin to high
+   //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+   difftime = TIM2->CNT - time;
     if (status == HAL_OK) {
         // Copiar los datos recibidos relevantes al buffer de destino
         memcpy(data, &rx_buffer[1], len);

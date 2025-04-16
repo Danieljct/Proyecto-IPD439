@@ -3,6 +3,8 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
+		<item value="BSP_SPI3_Send"/>
+		<item value="dataRdyIntReceived"/>
 		<item value="HAL_DMA_Start_IT"/>
 	</list>
 </section>

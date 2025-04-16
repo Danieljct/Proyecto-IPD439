@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename resource &apos;i2c test&apos; to &apos;spi test&apos;" description="Rename resource &apos;i2c test&apos;" flags="7" id="org.eclipse.ltk.core.refactoring.rename.resource" input="/i2c test" name="spi test" stamp="1744765537742" updateReferences="true"/>
+</session>

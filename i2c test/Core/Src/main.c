@@ -199,7 +199,6 @@ int32_t SPI_Send(void *ignored_handle, uint8_t Reg, uint8_t *pData, uint16_t Len
     // Asumiendo que hspi3 es tu handle SPI global o accesible
 
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-    HAL_Delay(1);
     if (HAL_SPI_Transmit(&hspi3, tx_buffer, transfer_size, BUS_SPI3_POLL_TIMEOUT*10) != HAL_OK)
     {
 
@@ -241,9 +240,8 @@ int32_t SPI_Recv(void *handle, uint8_t reg, uint8_t *data, uint16_t len)
     // Llamar a HAL con buffers válidos
     // Asumiendo que hspi3 es tu handle SPI global o accesible
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
-    HAL_Delay(1);
     HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(&hspi3, tx_buffer, rx_buffer, transfer_size, HAL_MAX_DELAY); // Usa un timeout adecuado
-    HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
+   HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
     if (status == HAL_OK) {
         // Copiar los datos recibidos relevantes al buffer de destino
         memcpy(data, &rx_buffer[1], len);

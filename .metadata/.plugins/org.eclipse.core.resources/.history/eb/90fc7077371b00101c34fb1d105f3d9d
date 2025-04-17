@@ -55,7 +55,7 @@
 #endif
 #define MAX_SETS_PER_READ   (READ_BUFFER_BYTES / ACCEL_BYTES_PER_SET)
 // --- Configuración Watermark ---
-#define FIFO_WATERMARK_WORDS 2020 // Umbral cercano al máximo (Max FTH es 2047)
+#define FIFO_WATERMARK_WORDS 2030 // Umbral cercano al máximo (Max FTH es 2047)
 #if (FIFO_WATERMARK_WORDS > 2047)
 #error FIFO_WATERMARK_WORDS cannot exceed 2047
 #endif

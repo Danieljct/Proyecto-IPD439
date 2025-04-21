@@ -165,5 +165,15 @@
 			<type>1</type>
 			<locationURI>PARENT-6-PROJECT_LOC/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src/option/syscall.c</locationURI>
 		</link>
+		<link>
+			<name>Drivers/BSP/Components/lsm6dsl.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl/lsm6dsl.c</locationURI>
+		</link>
+		<link>
+			<name>Drivers/BSP/Components/lsm6dsl_reg.c</name>
+			<type>1</type>
+			<locationURI>PARENT-6-PROJECT_LOC/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl/lsm6dsl_reg.c</locationURI>
+		</link>
 	</linkedResources>
 </projectDescription>

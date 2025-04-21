@@ -433,7 +433,7 @@ static void Read_Full_FIFO_And_Measure_Time_SPI(void)
     // --- Fin Medición ---
 
     // Calcular tiempo en us (¡Asegúrate que SystemCoreClock está bien definido!)
-    read_duration_us = read_duration_ticks / (SystemCoreClock / 1000000);
+    read_duration_us = read_duration_ticks / (80);
     printf("Tiempo lectura: %lu ticks (~%lu us)\r\n", read_duration_ticks, read_duration_us);
 
     if (status != LSM6DSL_OK) {

@@ -38,7 +38,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define PI 3.14159265
-#define DAC_BUFFER_SIZE 25600 // Número de muestras en la tabla de onda (potencia de 2 es común)
+#define DAC_BUFFER_SIZE 256 // Número de muestras en la tabla de onda (potencia de 2 es común)
 #define DAC_VREF 3.3f       // Voltaje de referencia del DAC (ej. 3.3V) - ¡AJUSTA SI ES DIFERENTE!
 #define DAC_MAX_VAL 4095    // Valor máximo para DAC 12 bits (2^12 - 1)
 /* USER CODE END PD */
@@ -57,7 +57,7 @@ uint16_t dac_sine_buffer[DAC_BUFFER_SIZE];
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void Generate_Sine_Wave(void);
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -99,29 +99,7 @@ int main(void)
   MX_DAC1_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
-  printf("--- DAC DMA Ejemplo ---\r\n");
 
-   // Generar la forma de onda en el buffer
-   Generate_Sine_Wave();
-
-   // Iniciar el Timer que genera los triggers
-   printf("Iniciando TIM6...\r\n");
-   if(HAL_TIM_Base_Start(&htim6) != HAL_OK)
-   {
-       printf("Error iniciando TIM6!\r\n");
-       Error_Handler();
-   }
-
-   // Iniciar el DAC con DMA en modo Circular
-   printf("Iniciando DAC1 CH1 con DMA Circular...\r\n");
-   // HAL espera un puntero uint32_t* aunque los datos sean uint16_t
-   if(HAL_DAC_Start_DMA(&hdac1, DAC_CHANNEL_1, (uint32_t*)dac_sine_buffer, DAC_BUFFER_SIZE, DAC_ALIGN_12B_R) != HAL_OK)
-   {
-       printf("Error iniciando DAC1_CH1 DMA!\r\n");
-       Error_Handler();
-   }
-
-   printf("DAC funcionando en segundo plano. Mide PA4 con osciloscopio.\r\n");
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -185,43 +163,7 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void Generate_Sine_Wave(void)
-{
-    printf("Generando tabla de onda sinusoidal (%d muestras)...\r\n", DAC_BUFFER_SIZE);
-    for (int i = 0; i < DAC_BUFFER_SIZE; i++)
-    {
-        // Calcular valor sinusoidal entre -1.0 y +1.0
-        float sin_value = sinf(2.0f * PI * (float)i / (float)DAC_BUFFER_SIZE);
 
-        // Escalar y desplazar al rango del DAC (0 a DAC_MAX_VAL)
-        // (sin_value + 1.0) -> Rango [0, 2.0]
-        // * 0.5 -> Rango [0, 1.0]
-        // * DAC_MAX_VAL -> Rango [0, DAC_MAX_VAL]
-        dac_sine_buffer[i] = (uint16_t)(((sin_value + 1.0f) * 0.5f) * DAC_MAX_VAL);
-
-        // Asegurarse de no exceder el máximo (por errores de redondeo float)
-        if (dac_sine_buffer[i] > DAC_MAX_VAL) {
-            dac_sine_buffer[i] = DAC_MAX_VAL;
-        }
-    }
-     printf("Tabla de onda generada.\r\n");
-}
-
-void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* hdac)
-{
-    // Este callback se llama cuando el DMA termina de recorrer TODO el buffer
-    // (útil si NO usas modo Circular, o para sincronización)
-    // En modo circular, se llama cada vez que completa una vuelta al buffer.
-    // Podrías usarlo para cambiar de buffer (ping-pong) o ajustar algo.
-    // Ejemplo: parpadear un LED
-    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-}
-
-int _write(int fd, char * ptr, int len)
-{
-  HAL_UART_Transmit(&huart2, (uint8_t *) ptr, len, HAL_MAX_DELAY);
-  return len;
-}
 /* USER CODE END 4 */
 
 /**

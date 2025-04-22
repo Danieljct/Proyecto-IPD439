@@ -9454,3 +9454,21 @@ java.lang.NullPointerException: Cannot read the array length because "containers
 
 !ENTRY org.eclipse.cdt.dsf.ui 2 0 2025-04-20 21:44:28.226
 !MESSAGE Unable to locate file: C:\Users\danie\OneDrive - Universidad T\303\251cnica Federico Santa Mar\303\255a\Escritorio\u\IPD439\codigo\fft_test\Core\Startup\startup_stm32l476rgtx.s
+!SESSION 2025-04-21 22:43:37.922 -----------------------------------------------
+eclipse.buildId=Version 1.18.0
+java.version=21.0.3
+java.vendor=Eclipse Adoptium
+BootLoader constants: OS=win32, ARCH=x86_64, WS=win32, NL=es_MX
+Command-line arguments:  -os win32 -ws win32 -arch x86_64
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 4 4 2025-04-21 22:47:46.593
+!MESSAGE CubeMX plugin appears to be active, Log4j initialization might be too late.
+
+!ENTRY com.st.stm32cube.ide.mcu.informationcenter 1 1 2025-04-21 22:47:46.596
+!MESSAGE Log4j2 initialized with config file C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\.metadata\.log4j2.xml
+
+!ENTRY com.st.stm32cube.ide.mcu.ide 1 1 2025-04-21 22:48:15.561
+!MESSAGE Started RMI Server, listening on port 41337
+
+!ENTRY org.eclipse.cdt.core 1 0 2025-04-21 22:59:06.784
+!MESSAGE Indexed 'DAC_test' (23 sources, 82 headers) in 10.7 sec: 5,463 declarations; 29,428 references; 0 unresolved inclusions; 1 syntax errors; 2 unresolved names (0.0057%)

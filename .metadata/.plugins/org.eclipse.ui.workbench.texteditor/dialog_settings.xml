@@ -3,6 +3,10 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
+		<item value="fftLen"/>
+		<item value="_us"/>
+		<item value="LSM6DSL_CS_GPIO_PORT"/>
+		<item value="time_us"/>
 		<item value="fifo_chunk_buffer"/>
 		<item value="fifo_read_buffer"/>
 		<item value="416.0"/>

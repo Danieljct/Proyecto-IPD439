@@ -38,7 +38,7 @@
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
 #define PI 3.14159265
-#define DAC_BUFFER_SIZE 25600 // Número de muestras en la tabla de onda (potencia de 2 es común)
+#define DAC_BUFFER_SIZE 4096// Número de muestras en la tabla de onda (potencia de 2 es común)
 #define DAC_VREF 3.3f       // Voltaje de referencia del DAC (ej. 3.3V) - ¡AJUSTA SI ES DIFERENTE!
 #define DAC_MAX_VAL 4095    // Valor máximo para DAC 12 bits (2^12 - 1)
 /* USER CODE END PD */
@@ -191,8 +191,8 @@ void Generate_Sine_Wave(void)
     for (int i = 0; i < DAC_BUFFER_SIZE; i++)
     {
         // Calcular valor sinusoidal entre -1.0 y +1.0
-        float sin_value = sinf(2.0f * PI * (float)i / (float)DAC_BUFFER_SIZE);
-
+        //float sin_value = sinf(2.0f * PI * (float)i / (float)DAC_BUFFER_SIZE);
+    	float sin_value = (i%2 >= 1)?1:-1;
         // Escalar y desplazar al rango del DAC (0 a DAC_MAX_VAL)
         // (sin_value + 1.0) -> Rango [0, 2.0]
         // * 0.5 -> Rango [0, 1.0]

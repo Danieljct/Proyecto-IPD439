@@ -69,7 +69,6 @@
 #endif
 
 #define NUM_MUESTRAS 682
-#define comments
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -82,14 +81,9 @@
 /* USER CODE BEGIN PV */
 extern SPI_HandleTypeDef hspi3;
 
-int32_t raw_x_values[NUM_MUESTRAS]; // Sufficient size
-int32_t raw_y_values[NUM_MUESTRAS];
-int32_t raw_z_values[NUM_MUESTRAS];
-
-// Buffers para valores CONVERTIDOS a mg (almacenados en 32 bits)
-int32_t mg_x_values[NUM_MUESTRAS]; // Sufficient size
-int32_t mg_y_values[NUM_MUESTRAS];
-int32_t mg_z_values[NUM_MUESTRAS];
+int16_t x_values[NUM_MUESTRAS];
+int16_t y_values[NUM_MUESTRAS];
+int16_t z_values[NUM_MUESTRAS];
 
 
 float cached_acc_sensitivity = 0.0f; // Cache sensitivity
@@ -187,17 +181,13 @@ int main(void)
 	      // Chequear si una transferencia DMA terminó (opcional si procesas en callback)
 	      if (spi_dma_transfer_complete) {
 	          spi_dma_transfer_complete = 0; // Resetear flag
-#ifdef comments
 	          printf("DMA Completado OK.\n");
-#endif
 
 	          // Procesar datos leídos que están en dma_rx_buffer
 	          Process_FIFO_Data_DMA(last_dma_read_bytes + 1); // +1 por byte dummy
 
 	          // Resetear FIFO aquí (fuera del callback es más seguro)
-#ifdef comments
 	          printf("Reseteando FIFO post-DMA...\r\n");
-#endif
 	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
 	          HAL_Delay(1); // Delay mínimo aquí está bien
 	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
@@ -522,63 +512,36 @@ static void Start_FIFO_Read_DMA(void)
         // DMA iniciado correctamente
     	time = TIM2->CNT;
         uint32_t time_us = difftime / 80;
-#ifdef comments
         printf("DMA iniciado (%lu ticks = ~%lu us)\r\n", difftime, time_us);
-#endif
         // El CS se pondrá en ALTO en el callback de completado o error
     }
     HAL_TIM_Base_Start_IT(&htim5); 
 }
 
-const int INITIAL_BUFFER_OFFSET = 1;
 /**
   * @brief Procesa los datos recibidos vía DMA desde la FIFO (solo eje Z).
   */
 static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
 {
     uint32_t time_us = difftime / 80;
-#ifdef comments
     printf("DMA Completado en (%lu ticks = ~%lu us)\r\n", difftime, time_us);
-#endif
 
     if (cached_acc_sensitivity == 0.0f || bytes_received_incl_dummy <= 1) return;
 
     uint16_t bytes_accel_data = bytes_received_incl_dummy - 1; // Datos reales (sin el primer byte basura)
     uint16_t sets_leidos = bytes_accel_data / ACCEL_BYTES_PER_SET;
-    uint8_t* data_start_ptr = dma_rx_buffer + INITIAL_BUFFER_OFFSET;
-#ifdef comments
-    printf("--- Procesando %u sets DMA ---\r\n", sets_leidos);
-#endif
-    for (int i = 0; i < sets_leidos; i++) {
-            // Calculate the pointer to the start of the current sample's 6 bytes
-            uint8_t* pSampleBytes = data_start_ptr + (i * ACCEL_BYTES_PER_SET);
 
-            // --- Extract Raw 16-bit Values and Store in 32-bit Buffers ---
-            // X (LSB in pSampleBytes[0], MSB in pSampleBytes[1])
-            raw_x_values[i] = (int16_t)(((uint16_t)pSampleBytes[1] << 8) | pSampleBytes[0]);
-
-            // Y (LSB in pSampleBytes[2], MSB in pSampleBytes[3])
-            raw_y_values[i] = (int16_t)(((uint16_t)pSampleBytes[3] << 8) | pSampleBytes[2]);
-
-            // Z (LSB in pSampleBytes[4], MSB in pSampleBytes[5])
-            raw_z_values[i] = (int16_t)(((uint16_t)pSampleBytes[5] << 8) | pSampleBytes[4]);
-
-            // --- Convert Raw Values to mg and Store in 32-bit Buffers ---
-            mg_x_values[i] = (int32_t)((float)raw_x_values[i] * cached_acc_sensitivity);
-            mg_y_values[i] = (int32_t)((float)raw_y_values[i] * cached_acc_sensitivity);
-            mg_z_values[i] = (int32_t)((float)raw_z_values[i] * cached_acc_sensitivity);
-
-            /*
-            // --- Optional: Print for first/last few samples (like in user's snippet) ---
-            if (i < 5 || i >= (sets_leidos - 5)) {
-                printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
-                       i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
-            }
-            */
+    printf("--- Procesando %u sets DMA (Solo Accel Z) ---\r\n", sets_leidos);
+    for (uint16_t i = 0; i < sets_leidos; i++) {
+         if (i < 5 || i >= (sets_leidos - 5)) { // Primeros y últimos 5
+            // Los datos útiles empiezan en dma_rx_buffer[1]
+            uint8_t* pSetData = &dma_rx_buffer[1 + (i * ACCEL_BYTES_PER_SET)];
+            int16_t acc_raw_z = (int16_t)(((uint16_t)pSetData[5] << 8) | pSetData[4]);
+            int32_t acc_mg_z = (int32_t)((float)acc_raw_z * cached_acc_sensitivity);
+            printf(" Set[%3u]: Az = %5ld mg\r\n", i, acc_mg_z);
         }
-#ifdef comments
-    printf("--- Fin Procesamiento DMA ---\r\n");
-#endif
+    }
+     printf("--- Fin Procesamiento DMA ---\r\n");
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
@@ -640,9 +603,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
   static int count = 0;
   if (htim->Instance == TIM5) {
-#ifdef comments
-	  printf("TIM5 Periodo: %.1f us\r\n", (TIM2->CNT-count)/80.0f);
-#endif
+    printf("TIM5 Periodo: %.1f us\r\n", (TIM2->CNT-count)/80.0f);
     fifo_int_triggered = 1; // Poner el flag para el bucle principal
     HAL_TIM_Base_Stop_IT(&htim5); // Detener el timer
     count = TIM2->CNT;

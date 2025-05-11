@@ -3,6 +3,11 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
+		<item value="write"/>
+		<item value="disk_write"/>
+		<item value="DMA"/>
+		<item value="myprintf"/>
+		<item value="generate_sine_to_csv"/>
 		<item value="fftLen"/>
 		<item value="_us"/>
 		<item value="LSM6DSL_CS_GPIO_PORT"/>
@@ -13,7 +18,5 @@
 		<item value="12.5"/>
 		<item value="cached_acc_sensitivity"/>
 		<item value="BSP_SPI3_Send"/>
-		<item value="dataRdyIntReceived"/>
-		<item value="HAL_DMA_Start_IT"/>
 	</list>
 </section>

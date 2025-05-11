@@ -147,12 +147,13 @@ int main(void)
   MX_SPI2_Init();
   MX_FATFS_Init();
   MX_TIM2_Init();
+  MX_TIM5_Init();
   /* USER CODE BEGIN 2 */
 
   HAL_TIM_Base_Start(&htim2);
   printf("---- LSM6DSL FIFO Interrupt + DMA SPI (Accel Z @ 6.66kHz) ----\r\n");
    MEMS_Init_SPI_FIFO_Int(); // Llama a la inicialización correcta
-
+  HAL_TIM_Base_Start_IT(&htim5);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -442,17 +443,20 @@ static void MEMS_Init_SPI_FIFO_Int(void)
 /**
   * @brief Inicia la lectura de la FIFO usando DMA. Llamada desde main loop.
   */
+
+uint16_t num_words_available = 0;
+uint16_t bytes_to_read = 0;
+int32_t status;
 static void Start_FIFO_Read_DMA(void)
 {
     if (!lsm6dsl_init_status_spi) return;
 
-    uint16_t num_words_available = 0;
-    uint16_t bytes_to_read = 0;
-    int32_t status;
+    num_words_available = 0;
+    bytes_to_read = 0;
 
     // Leer nivel FIFO
     status = LSM6DSL_FIFO_Get_Num_Samples(&MotionSensor, &num_words_available);
-    if (status != LSM6DSL_OK) { printf("E:StartRead_GetSamples(%ld)\r\n", status); return; }
+    //if (status != LSM6DSL_OK) { printf("E:StartRead_GetSamples(%ld)\r\n", status); return; }
 
     // Determinar cuántos bytes leer (no exceder buffer ni FIFO max)
     bytes_to_read = num_words_available * 2;
@@ -462,7 +466,7 @@ static void Start_FIFO_Read_DMA(void)
         bytes_to_read = FIFO_MAX_BYTES;
     }
 
-    printf("INT DMA! Leyendo %u palabras (%u bytes)...\r\n", num_words_available, bytes_to_read);
+    //printf("INT DMA! Leyendo %u palabras (%u bytes)...\r\n", num_words_available, bytes_to_read);
     last_dma_read_bytes = bytes_to_read; // Guardar para el callback
 
     // --- Preparar Buffers DMA ---
@@ -507,7 +511,7 @@ static void Start_FIFO_Read_DMA(void)
         printf("DMA iniciado (%lu ticks = ~%lu us)\r\n", difftime, time_us);
         // El CS se pondrá en ALTO en el callback de completado o error
     }
-
+    HAL_TIM_Base_Start_IT(&htim5); 
 }
 
 /**
@@ -587,11 +591,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   // Asegúrate que el pin coincide con el conectado a INT1 del sensor
   if (GPIO_Pin == GPIO_PIN_0) {
-    fifo_int_triggered = 1; // Poner el flag para el bucle principal
+    //fifo_int_triggered = 1; // Poner el flag para el bucle principal
     // NO hacer lecturas SPI/I2C aquí dentro de la interrupción.
   }
 }
 
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+  static int count = 0;
+  if (htim->Instance == TIM5) {
+    printf("TIM5 Periodo: %.1f us\r\n", (TIM2->CNT-count)/80.0f);
+    fifo_int_triggered = 1; // Poner el flag para el bucle principal
+    HAL_TIM_Base_Stop_IT(&htim5); // Detener el timer
+    count = TIM2->CNT;
+  }
+}
 
 int _write(int fd, char * ptr, int len)
 {

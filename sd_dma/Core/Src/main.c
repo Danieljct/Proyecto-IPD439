@@ -159,13 +159,13 @@ int main(void)
                               5.0,                // Amplitud = 5.0
                               2.0,                // Frecuencia = 2 Hz (2 ciclos por segundo)
                               3.0,                // Duración = 3 segundos
-                              15000                 // Número de puntos = 150 (generará 150 puntos en 3 seg)
+                              15                 // Número de puntos = 150 (generará 150 puntos en 3 seg)
                           );
 
           if (res == FR_OK) {
        	   myprintf("Archivo CSV generado con éxito.\r\n");
 
-            myprintf("Tiempo de ejecución: %f s\r\n", difftime/80000000.0);
+
           } else {
        	   myprintf("Fallo al generar el archivo CSV.\r\n");
           }
@@ -473,7 +473,7 @@ FRESULT generate_sine_to_csv(const char* filename, double amplitude, double freq
          time = TIM2->CNT;
         fr = f_write(&fil, data_buffer, strlen(data_buffer), &bytes_written);
         difftime = TIM2->CNT - time;
-
+        myprintf("Tiempo de ejecución: %f s\r\n", difftime/80000000.0);
         if (fr != FR_OK || bytes_written < strlen(data_buffer)) {
             printf("Error: No se pudo escribir el punto %d en '%s'. Codigo FatFs: %d\r\n", i, filename, fr);
             f_close(&fil); // Intentar cerrar

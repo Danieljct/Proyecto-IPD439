@@ -69,7 +69,7 @@
 #endif
 
 #define NUM_MUESTRAS 682
-#define comments
+//#define comments
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -579,6 +579,10 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
 #ifdef comments
     printf("--- Fin Procesamiento DMA ---\r\n");
 #endif
+    printf("DMA x:");
+    for (int i = 0; i < sets_leidos; i++) {
+        printf("%ld ", mg_x_values[i]);
+    }
 }
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)

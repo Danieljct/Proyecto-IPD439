@@ -1,39 +1,10 @@
-18:13:21 **** Incremental Build of configuration Debug for project proyecto_1 ****
+21:20:22 **** Incremental Build of configuration Debug for project proyecto_1 ****
 make -j4 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
-../Core/Src/main.c:375:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
-  375 |     io_ctx.WriteReg = SPI_Send;
-      |                     ^
-../Core/Src/main.c:376:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
-  376 |     io_ctx.ReadReg = SPI_Recv;
-      |                    ^
-../Core/Src/main.c:367:11: warning: unused variable 'sens_a' [-Wunused-variable]
-  367 |     float sens_a;
-      |           ^~~~~~
-../Core/Src/main.c: In function 'Start_FIFO_Read_DMA':
-../Core/Src/main.c:524:18: warning: unused variable 'time_us' [-Wunused-variable]
-  524 |         uint32_t time_us = difftime / 80;
-      |                  ^~~~~~~
-../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
-../Core/Src/main.c:539:14: warning: unused variable 'time_us' [-Wunused-variable]
-  539 |     uint32_t time_us = difftime / 80;
-      |              ^~~~~~~
-../Core/Src/main.c: In function 'HAL_TIM_PeriodElapsedCallback':
-../Core/Src/main.c:645:14: warning: variable 'count' set but not used [-Wunused-but-set-variable]
-  645 |   static int count = 0;
-      |              ^~~~~
-arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: proyecto_1.elf
- 
 arm-none-eabi-size  proyecto_1.elf 
-arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
    text	   data	    bss	    dec	    hex	filename
-  46648	    492	  27524	  74664	  123a8	proyecto_1.elf
+ 171676	    492	  30628	 202796	  3182c	proyecto_1.elf
 Finished building: default.size.stdout
  
-Finished building: proyecto_1.list
- 
 
-18:13:23 Build Finished. 0 errors, 6 warnings. (took 2s.571ms)
+21:20:24 Build Finished. 0 errors, 0 warnings. (took 1s.473ms)
 

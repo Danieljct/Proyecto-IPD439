@@ -96,8 +96,6 @@ float32_t mg_z_values[NUM_MUESTRAS];
 
 
 float32_t fft_z[fft_points];
-float32_t magnitudes[fft_points/2 + 1]; 
-
 
 float cached_acc_sensitivity = 0.0f; // Cache sensitivity
 uint8_t fifo_chunk_buffer[READ_BUFFER_BYTES];
@@ -591,16 +589,9 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
     printf("--- Fin Procesamiento DMA ---\r\n");
 #endif
     arm_rfft_fast_f32(&fft_instance,fft_in,fft_z, 0);
-    // Calcular DC y Nyquist por separado
-    magnitudes[0] = fabsf(fft_z[0]);
-    #if (fft_points % 2 == 0) // Si N es par, hay componente Nyquist
-    	magnitudes[fft_points/2] = fabsf(fft_z[1]);
-    #endif
-    arm_cmplx_mag_f32(&fft_z[2], &magnitudes[1], (fft_points - 2) / 2);
-
     printf("DMA x:");
-    for (int i = 0; i < fft_points/2+1; i++) {
-        printf("%.0f ", magnitudes[i]);
+    for (int i = 0; i < fft_points; i++) {
+        printf("%.0f ", fft_z[i]);
     }
 }
 

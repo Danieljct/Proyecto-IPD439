@@ -35,10 +35,10 @@ try:
             buffer += data
 
             # Procesar el buffer línea por línea o por sets de datos
-            while "FIFO reseteada." in buffer:
-                end_index = buffer.find("FIFO reseteada.")
+            while "END." in buffer:
+                end_index = buffer.find("END.")
                 set_data_str = buffer[:end_index]
-                buffer = buffer[end_index + len("FIFO reseteada."):]
+                buffer = buffer[end_index + len("END."):]
 
                 # Buscar el inicio del set de datos
                 start_index = set_data_str.find("DMA x:")
@@ -58,7 +58,7 @@ try:
                             ax.grid(True)
 
                             # Fijar los límites del eje Y entre 0 y 4000
-                            ax.set_ylim(-2000, 2000)
+                            ax.set_ylim(0, 100000)
 
                             # Ajustar los límites del eje X
                             ax.set_xlim(0, len(data_values) - 1)

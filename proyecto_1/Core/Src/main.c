@@ -69,7 +69,7 @@
 #error FIFO_WATERMARK_WORDS cannot exceed 2047
 #endif
 
-#define fft_points 512
+#define fft_points 2048
 #define NUM_MUESTRAS 682
 //#define comments
 /* USER CODE END PD */
@@ -586,7 +586,7 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
             */
         }
     float32_t fft_in[fft_points] = {0};
-    memcpy(fft_in, mg_z_values, sizeof(mg_z_values)/4);
+    memcpy(fft_in, mg_z_values, sizeof(mg_z_values)/2);
 #ifdef comments
     printf("--- Fin Procesamiento DMA ---\r\n");
 #endif

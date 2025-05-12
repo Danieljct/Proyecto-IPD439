@@ -49,19 +49,23 @@ try:
                         data_values = [int(val) for val in data_values_str.split()]
 
                         if data_values:
-                            # Actualizar la gráfica
+                              
+                            fs = 6660  # Frecuencia de muestreo en Hz
+                            n = len(data_values)  # Número de puntos en la FFT
+                            freqs = np.linspace(0, fs / 2, n)  # Frecuencias de 0 a fs/2 (3.33 kHz)
+
                             ax.clear() # Limpiar la gráfica anterior
-                            ax.plot(data_values, 'o-') # Graficar los nuevos puntos
-                            ax.set_xlabel("Índice del Dato")
+                            ax.plot(freqs, data_values, 'o-') # Graficar los nuevos puntos
+                            ax.set_xlabel("Frecuencia (Hz)")
                             ax.set_ylabel("Valor del Dato")
                             ax.set_title("Datos de DMA en Tiempo Real")
                             ax.grid(True)
 
                             # Fijar los límites del eje Y entre 0 y 4000
-                            ax.set_ylim(0, 100000)
+                            ax.set_ylim(0, 40000)
 
                             # Ajustar los límites del eje X
-                            ax.set_xlim(0, len(data_values) - 1)
+                            ax.set_xlim(0, fs / 2)
 
                             plt.draw()
                             plt.pause(0.001) # Pequeña pausa para actualizar la gráfica

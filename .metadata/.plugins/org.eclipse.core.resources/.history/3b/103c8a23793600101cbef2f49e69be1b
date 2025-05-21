@@ -71,7 +71,7 @@
 
 #define fft_points 2048
 #define NUM_MUESTRAS 682
-#define comments
+//#define comments
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -191,7 +191,6 @@ int main(void)
 	          } else {
 	               printf("WARN: Int. FIFO pero DMA aún activo o error.\n");
 	          }
-
 	      }
 
 	      // Chequear si una transferencia DMA terminó (opcional si procesas en callback)
@@ -200,12 +199,7 @@ int main(void)
 #ifdef comments
 	          printf("DMA Completado OK.\n");
 #endif
-	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
-	          HAL_Delay(1); // Delay mínimo aquí está bien
-	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
-	         //  printf("END.\n");
 
-	          HAL_TIM_Base_Start_IT(&htim5);
 	          // Procesar datos leídos que están en dma_rx_buffer
 	          Process_FIFO_Data_DMA(last_dma_read_bytes + 1); // +1 por byte dummy
 
@@ -213,6 +207,10 @@ int main(void)
 #ifdef comments
 	          printf("Reseteando FIFO post-DMA...\r\n");
 #endif
+	         // lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
+	          //HAL_Delay(1); // Delay mínimo aquí está bien
+	         // lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
+	         //  printf("END.\n");
 
 	      }
 
@@ -287,31 +285,56 @@ void SystemClock_Config(void)
 
 int32_t SPI_Send(void *ignored_handle, uint8_t Reg, uint8_t *pData, uint16_t Length)
 {
+    // Tamaño total de la transmisión SPI (1 byte de dirección + Length bytes de datos)
     uint16_t transfer_size = 1 + Length;
     int32_t ret = BSP_ERROR_NONE; // 0
+    // Dentro de BSP_SPI3_Send, antes de HAL_SPI_Transmit
+
     // Buffer local para la transmisión completa
+    // Asegúrate de que sea lo suficientemente grande para la escritura más larga posible.
+    // O usa asignación dinámica si prefieres y tienes heap configurado.
     uint8_t tx_buffer[transfer_size];
+
     // Preparar comando de escritura (MSB=0 para escribir)
     tx_buffer[0] = 0x7F & Reg; // Pone a 0 el bit 7
+
+    // Copiar los datos a escribir después del comando/dirección
     memcpy(&tx_buffer[1], pData, Length);
+   // printf("BSP_SPI3_Send: Escribiendo Reg=0x%02X, tx_buffer[0]=0x%02X\n", Reg, tx_buffer[0]);
+    // Llamar a HAL para transmitir el buffer completo
+    // Asumiendo que hspi3 es tu handle SPI global o accesible
 
     GPIOA->BSRR = GPIO_PIN_1 << 16; // Set pin to low
     if (HAL_SPI_Transmit(&hspi3, tx_buffer, transfer_size, BUS_SPI3_POLL_TIMEOUT*10) != HAL_OK)
     {
+
+        // Error en la transmisión HAL
          printf("BSP_SPI3_Send: HAL_SPI_Transmit falló!\r\n");
          ret = BSP_ERROR_UNKNOWN_FAILURE; // O un código de error más específico
     }
     GPIOA->BSRR = GPIO_PIN_1; // Set pin to high
+    // No necesitas recibir nada en una escritura pura (a menos que quieras verificar MISO)
+
     return ret;
 }
 
+/**
+  * @brief  Receive Data from SPI BUS
+  * @param  pData: Pointer to data buffer to receive
+  * @param  Length: Length of data in byte
+  * @retval BSP status
+  */
+// Asumiendo que BSP_SPI3_Recv recibe (..., uint8_t reg, uint8_t *data, uint16_t len)
 int32_t SPI_Recv(void *handle, uint8_t reg, uint8_t *data, uint16_t len)
 {
-
+    // Tamaño total de la transferencia SPI
     uint16_t transfer_size = 1 + len;
+
+    // Buffers locales (pueden ser estáticos si len tiene un máximo conocido y pequeño)
     uint8_t tx_buffer[transfer_size];
     uint8_t rx_buffer[transfer_size];
 
+    // Preparar comando de lectura (Ej: MSB=1 para leer)
     tx_buffer[0] = 0x80 | reg;
 
     // Rellenar resto de Tx con dummy bytes (0x00 o 0xFF)
@@ -319,13 +342,17 @@ int32_t SPI_Recv(void *handle, uint8_t reg, uint8_t *data, uint16_t len)
         tx_buffer[i] = 0x00; // O 0xFF
     }
 
+    // Llamar a HAL con buffers válidos
+    // Asumiendo que hspi3 es tu handle SPI global o accesible
     time = TIM2->CNT;
+    //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_RESET);
     GPIOA->BSRR = GPIO_PIN_1<< 16; // Set pin to low
     HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(&hspi3, tx_buffer, rx_buffer, transfer_size, HAL_MAX_DELAY); // Usa un timeout adecuado
     GPIOA->BSRR = GPIO_PIN_1 ; // Set pin to high
-
+   //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_1, GPIO_PIN_SET);
    difftime = TIM2->CNT - time;
     if (status == HAL_OK) {
+        // Copiar los datos recibidos relevantes al buffer de destino
         memcpy(data, &rx_buffer[1], len);
         return 0; // Éxito (LSM6DSL_OK)
     } else {
@@ -462,27 +489,38 @@ static void Start_FIFO_Read_DMA(void)
         bytes_to_read = FIFO_MAX_BYTES;
     }
 
-    printf("INT DMA! Leyendo %u palabras (%u bytes)...\r\n", num_words_available, bytes_to_read);
+    //printf("INT DMA! Leyendo %u palabras (%u bytes)...\r\n", num_words_available, bytes_to_read);
     last_dma_read_bytes = bytes_to_read; // Guardar para el callback
 
+    // --- Preparar Buffers DMA ---
     // Buffer TX: Comando de lectura + Dummies
     dma_tx_buffer[0] = LSM6DSL_FIFO_DATA_OUT_L | 0x80; // Comando Leer desde FIFO_DATA_OUT_L
     memset(&dma_tx_buffer[1], 0x00, bytes_to_read); // Dummies
 
+    // Buffer RX: Usaremos dma_rx_buffer (global)
+    // Limpiar buffer RX (opcional, buena práctica)
+    // memset(dma_rx_buffer, 0, bytes_to_read + 1);
+
+    // --- Iniciar Transferencia DMA ---
     spi_dma_transfer_complete = 0; // Marcar como no completa
     spi_dma_transfer_error = 0;    // Limpiar flag de error
 
+    // Medir tiempo de INICIO DMA
     time = TIM2->CNT;
 
+    // CS BAJO (Manual, antes de llamar a HAL DMA)
     GPIOA->BSRR = GPIO_PIN_1<< 16;
+
+    // Iniciar DMA SPI Tx/Rx
     HAL_StatusTypeDef dma_status = HAL_SPI_TransmitReceive_DMA(&hspi3,
                                                                dma_tx_buffer,
                                                                dma_rx_buffer, // Leer en buffer DMA RX
                                                                bytes_to_read + 1); // Tamaño total = Comando + Datos
 
-    difftime = TIM2->CNT - time;
+    difftime = TIM2->CNT - time; // Tiempo que tardó en INICIAR el DMA
 
     if (dma_status != HAL_OK) {
+        // Error al iniciar DMA
         GPIOA->BSRR = GPIO_PIN_1 ; // CS Alto en error
         printf("E:HAL_SPI_TransmitReceive_DMA (%d)\r\n", dma_status);
         spi_dma_transfer_error = 1; // Marcar error
@@ -498,7 +536,7 @@ static void Start_FIFO_Read_DMA(void)
 #endif
         // El CS se pondrá en ALTO en el callback de completado o error
     }
-   // HAL_TIM_Base_Start_IT(&htim5);
+    HAL_TIM_Base_Start_IT(&htim5); 
 }
 
 const int INITIAL_BUFFER_OFFSET = 1;
@@ -539,15 +577,15 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
             mg_y_values[i] = (float32_t)((float)raw_y_values[i] * cached_acc_sensitivity);
             mg_z_values[i] = (float32_t)((float)raw_z_values[i] * cached_acc_sensitivity);
 
-
+            /*
             // --- Optional: Print for first/last few samples (like in user's snippet) ---
             if (i < 5 || i >= (sets_leidos - 5)) {
-                printf(" Set[%3u]: Ax = %f mg, Ay = %5f mg, Az = %5f mg\r\n",
+                printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
             }
-
+            */
         }
-    /*float32_t fft_in[fft_points] = {0};
+    float32_t fft_in[fft_points] = {0};
     memcpy(fft_in, mg_z_values, sizeof(mg_z_values)/2);
 #ifdef comments
     printf("--- Fin Procesamiento DMA ---\r\n");
@@ -563,12 +601,8 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
     printf("DMA x:");
     for (int i = 0; i < fft_points/2+1; i++) {
         printf("%.0f ", magnitudes[i]);
-    }*/
-
-
-
+    }
 }
-
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
@@ -621,7 +655,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
   // Asegúrate que el pin coincide con el conectado a INT1 del sensor
   if (GPIO_Pin == GPIO_PIN_0) {
-    //fifo_int_triggered = 1; // Poner el flag para el bucle principal
+    fifo_int_triggered = 1; // Poner el flag para el bucle principal
     // NO hacer lecturas SPI/I2C aquí dentro de la interrupción.
   }
 }
@@ -632,8 +666,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 #ifdef comments
 	  printf("TIM5 Periodo: %.1f us\r\n", (TIM2->CNT-count)/80.0f);
 #endif
-    fifo_int_triggered = 1; // Poner el flag para el bucle principal
-    HAL_TIM_Base_Stop_IT(&htim5); // Detener el timer
+    //fifo_int_triggered = 1; // Poner el flag para el bucle principal
+    //HAL_TIM_Base_Stop_IT(&htim5); // Detener el timer
     //count = TIM2->CNT;
   }
 }

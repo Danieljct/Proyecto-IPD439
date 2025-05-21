@@ -191,7 +191,6 @@ int main(void)
 	          } else {
 	               printf("WARN: Int. FIFO pero DMA aún activo o error.\n");
 	          }
-
 	      }
 
 	      // Chequear si una transferencia DMA terminó (opcional si procesas en callback)
@@ -200,12 +199,7 @@ int main(void)
 #ifdef comments
 	          printf("DMA Completado OK.\n");
 #endif
-	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
-	          HAL_Delay(1); // Delay mínimo aquí está bien
-	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
-	         //  printf("END.\n");
 
-	          HAL_TIM_Base_Start_IT(&htim5);
 	          // Procesar datos leídos que están en dma_rx_buffer
 	          Process_FIFO_Data_DMA(last_dma_read_bytes + 1); // +1 por byte dummy
 
@@ -213,6 +207,11 @@ int main(void)
 #ifdef comments
 	          printf("Reseteando FIFO post-DMA...\r\n");
 #endif
+	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
+	          for (int i = 0; i < 100; i++)__NOP();
+	          //HAL_Delay(1); // Delay mínimo aquí está bien
+	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
+	         //  printf("END.\n");
 
 	      }
 
@@ -498,7 +497,7 @@ static void Start_FIFO_Read_DMA(void)
 #endif
         // El CS se pondrá en ALTO en el callback de completado o error
     }
-   // HAL_TIM_Base_Start_IT(&htim5);
+    HAL_TIM_Base_Start_IT(&htim5);
 }
 
 const int INITIAL_BUFFER_OFFSET = 1;
@@ -542,7 +541,7 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
 
             // --- Optional: Print for first/last few samples (like in user's snippet) ---
             if (i < 5 || i >= (sets_leidos - 5)) {
-                printf(" Set[%3u]: Ax = %f mg, Ay = %5f mg, Az = %5f mg\r\n",
+                printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
             }
 

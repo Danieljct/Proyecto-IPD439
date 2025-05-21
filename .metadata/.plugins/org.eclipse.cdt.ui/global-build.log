@@ -96,3 +96,1105 @@ Finished building: default.size.stdout
  
 Finished building: spi test.list
  
+15:14:33 **** Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:384:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  384 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:385:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  385 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:376:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  376 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Start_FIFO_Read_DMA':
+../Core/Src/main.c:533:18: warning: unused variable 'time_us' [-Wunused-variable]
+  533 |         uint32_t time_us = difftime / 80;
+      |                  ^~~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:548:14: warning: unused variable 'time_us' [-Wunused-variable]
+  548 |     uint32_t time_us = difftime / 80;
+      |              ^~~~~~~
+../Core/Src/main.c: In function 'HAL_TIM_PeriodElapsedCallback':
+../Core/Src/main.c:664:14: warning: variable 'count' set but not used [-Wunused-but-set-variable]
+  664 |   static int count = 0;
+      |              ^~~~~
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 171636	    492	  39844	 211972	  33c04	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:18:16 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:384:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  384 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:385:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  385 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:376:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  376 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Start_FIFO_Read_DMA':
+../Core/Src/main.c:533:18: warning: unused variable 'time_us' [-Wunused-variable]
+  533 |         uint32_t time_us = difftime / 80;
+      |                  ^~~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:548:14: warning: unused variable 'time_us' [-Wunused-variable]
+  548 |     uint32_t time_us = difftime / 80;
+      |              ^~~~~~~
+../Core/Src/main.c: In function 'HAL_TIM_PeriodElapsedCallback':
+../Core/Src/main.c:664:14: warning: unused variable 'count' [-Wunused-variable]
+  664 |   static int count = 0;
+      |              ^~~~~
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 171556	    492	  39836	 211884	  33bac	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:24:04 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/tim.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tim.d" -MT"Core/Src/tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tim.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:384:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  384 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:385:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  385 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:376:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  376 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Start_FIFO_Read_DMA':
+../Core/Src/main.c:533:18: warning: unused variable 'time_us' [-Wunused-variable]
+  533 |         uint32_t time_us = difftime / 80;
+      |                  ^~~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:548:14: warning: unused variable 'time_us' [-Wunused-variable]
+  548 |     uint32_t time_us = difftime / 80;
+      |              ^~~~~~~
+../Core/Src/main.c: In function 'HAL_TIM_PeriodElapsedCallback':
+../Core/Src/main.c:664:14: warning: unused variable 'count' [-Wunused-variable]
+  664 |   static int count = 0;
+      |              ^~~~~
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 171628	    492	  39836	 211956	  33bf4	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:26:11 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:384:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  384 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:385:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  385 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:376:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  376 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:583:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  583 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  584 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:583:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  583 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  584 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:583:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  583 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  584 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167504	    492	  27548	 195544	  2fbd8	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:30:14 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:384:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  384 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:385:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  385 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:376:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  376 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:583:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  583 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  584 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:583:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  583 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  584 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:583:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  583 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  584 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167496	    492	  27548	 195536	  2fbd0	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:35:23 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:355:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  355 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:356:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  356 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:347:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  347 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:543:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  543 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  544 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:543:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  543 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  544 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:543:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  543 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  544 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167576	    492	  27548	 195616	  2fc20	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:41:18 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:355:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  355 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:356:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  356 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:347:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  347 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:543:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  543 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  544 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:543:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  543 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  544 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:543:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  543 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  544 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167584	    492	  27548	 195624	  2fc28	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:41:59 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:355:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  355 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:356:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  356 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:347:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  347 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:543:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  543 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  544 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:543:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  543 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  544 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:543:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  543 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  544 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167592	    492	  27548	 195632	  2fc30	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:44:27 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:355:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  355 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:356:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  356 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:347:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  347 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:543:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  543 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  544 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:543:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  543 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  544 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:543:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  543 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  544 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167584	    492	  27548	 195624	  2fc28	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:47:07 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:356:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  356 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:357:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  357 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:348:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  348 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:544:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  544 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  545 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:544:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  544 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  545 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:544:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  544 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  545 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167584	    492	  27548	 195624	  2fc28	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:47:57 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:356:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  356 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:357:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  357 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:348:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  348 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:544:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  544 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  545 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:544:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  544 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  545 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:544:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  544 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  545 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167592	    492	  27548	 195632	  2fc30	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:49:18 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:356:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  356 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:357:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  357 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:348:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  348 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:544:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  544 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  545 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:544:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  544 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  545 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:544:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  544 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  545 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167592	    492	  27548	 195632	  2fc30	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:49:48 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:356:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  356 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:357:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  357 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:348:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  348 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:544:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  544 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  545 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:544:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  544 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  545 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:544:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  544 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  545 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167600	    492	  27548	 195640	  2fc38	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:50:57 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:357:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  357 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:358:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  358 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:349:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  349 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:545:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:545:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:545:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167592	    492	  27548	 195632	  2fc30	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:51:15 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-size  proyecto_1.elf 
+   text	   data	    bss	    dec	    hex	filename
+ 167592	    492	  27548	 195632	  2fc30	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+15:53:01 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:358:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  358 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:359:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  359 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:350:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  350 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:546:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  546 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  547 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:546:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  546 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  547 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:546:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  546 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  547 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167600	    492	  27548	 195640	  2fc38	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:55:58 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:357:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  357 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:358:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  358 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:349:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  349 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:545:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:545:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:545:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167584	    492	  27548	 195624	  2fc28	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+15:57:04 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:357:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  357 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:358:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  358 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:349:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  349 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:545:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:545:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:545:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167584	    492	  27548	 195624	  2fc28	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+16:00:27 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/tim.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tim.d" -MT"Core/Src/tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tim.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:357:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  357 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:358:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  358 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:349:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  349 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:545:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:545:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:545:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167584	    492	  27548	 195624	  2fc28	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+16:05:11 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc "../Core/Src/tim.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tim.d" -MT"Core/Src/tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tim.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:357:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  357 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:358:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  358 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:349:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  349 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:545:44: warning: format '%ld' expects argument of type 'long int', but argument 3 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                         ~~~^
+      |                                            |
+      |                                            long int
+      |                                         %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                           ~~~~~~~~~~~~~~    
+      |                                      |
+      |                                      double
+../Core/Src/main.c:545:58: warning: format '%ld' expects argument of type 'long int', but argument 4 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                       ~~~^
+      |                                                          |
+      |                                                          long int
+      |                                                       %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                           ~~~~~~~~~~~~~~  
+      |                                                      |
+      |                                                      double
+../Core/Src/main.c:545:72: warning: format '%ld' expects argument of type 'long int', but argument 5 has type 'double' [-Wformat=]
+  545 |                 printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
+      |                                                                     ~~~^
+      |                                                                        |
+      |                                                                        long int
+      |                                                                     %5f
+  546 |                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+      |                                                           ~~~~~~~~~~~~~~
+      |                                                                      |
+      |                                                                      double
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167584	    492	  27548	 195624	  2fc28	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 
+16:08:19 **** Incremental Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'main':
+../Core/Src/main.c:142:20: warning: unused variable 'status' [-Wunused-variable]
+  142 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+      |                    ^~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:357:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  357 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:358:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  358 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:349:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  349 |     float sens_a;
+      |           ^~~~~~
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
+arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
+   text	   data	    bss	    dec	    hex	filename
+ 167584	    492	  27548	 195624	  2fc28	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1.list
+ 

@@ -542,7 +542,7 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
 
             // --- Optional: Print for first/last few samples (like in user's snippet) ---
             if (i < 5 || i >= (sets_leidos - 5)) {
-                printf(" Set[%3u]: Ax = %f mg, Ay = %5f mg, Az = %5f mg\r\n",
+                printf(" Set[%3u]: Ax = %5ld mg, Ay = %5ld mg, Az = %5ld mg\r\n",
                        i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
             }
 

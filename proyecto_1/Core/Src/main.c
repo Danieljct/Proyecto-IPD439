@@ -97,6 +97,7 @@ float32_t mg_z_values[NUM_MUESTRAS];
 
 float32_t fft_z[fft_points];
 float32_t magnitudes[fft_points/2 + 1]; 
+float32_t fft_in[fft_points] = {0};
 
 
 float cached_acc_sensitivity = 0.0f; // Cache sensitivity
@@ -127,6 +128,13 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+int finish = 0; int startfft = 0;
+void HAL_DMA_Callback(DMA_HandleTypeDef *hdma){
+	if(hdma -> Instance == DMA1_Channel1){
+		difftime = TIM2->CNT - time;
+		finish = 1;
+	}
+}
 
 /* USER CODE END 0 */
 
@@ -226,6 +234,29 @@ int main(void)
 	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
 	      }
 
+        if(startfft && finish){
+          int STARTtiempofft = TIM2->CNT;
+          arm_rfft_fast_f32(&fft_instance,fft_in,fft_z, 0);
+          // Calcular DC y Nyquist por separado
+          magnitudes[0] = fabsf(fft_z[0]);
+          #if (fft_points % 2 == 0) // Si N es par, hay componente Nyquist
+            magnitudes[fft_points/2] = fabsf(fft_z[1]);
+          #endif
+          arm_cmplx_mag_f32(&fft_z[2], &magnitudes[1], (fft_points - 2) / 2);
+          int tiempofft =  TIM2->CNT -STARTtiempofft;
+          printf("FFT tiempo: %.4f ms\n", tiempofft/80000.0);
+          const char* header = "DMA x:";
+          HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
+
+          // Enviar datos binarios
+          HAL_UART_Transmit(&huart2, (uint8_t*)magnitudes, (fft_points/2+1) * sizeof(float32_t), HAL_MAX_DELAY);
+
+          // Enviar final
+          const char* footer = "END.";
+          HAL_UART_Transmit(&huart2, (uint8_t*)footer, strlen(footer), HAL_MAX_DELAY);
+          for (int k = 0; k<fft_points; k++) fft_in[k]=0;
+        	startfft = 0;
+        }
 	      // Ceder tiempo
 	      HAL_Delay(1);
   }
@@ -541,12 +572,22 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
 
 
             // --- Optional: Print for first/last few samples (like in user's snippet) ---
-            if (i < 5 || i >= (sets_leidos - 5)) {
-                printf(" Set[%3u]: Ax = %f mg, Ay = %5f mg, Az = %5f mg\r\n",
-                       i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
-            }
+          //  if (i < 5 || i >= (sets_leidos - 5)) {
+          //      printf(" Set[%3u]: Ax = %f mg, Ay = %5f mg, Az = %5f mg\r\n",
+          //             i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+          //  }
 
         }
+    static int cantidad_sets = 0;
+    finish = 0;
+
+    hdma_memtomem_dma1_channel1.XferCpltCallback = &HAL_DMA_Callback;
+    HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_z_values, &fft_in[cantidad_sets], sets_leidos);
+    cantidad_sets += sets_leidos;
+    if (cantidad_sets >= 600) {
+        cantidad_sets = 0;
+        startfft = 1;
+    }
     /*float32_t fft_in[fft_points] = {0};
     memcpy(fft_in, mg_z_values, sizeof(mg_z_values)/2);
 #ifdef comments
@@ -634,7 +675,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 #endif
     fifo_int_triggered = 1; // Poner el flag para el bucle principal
     HAL_TIM_Base_Stop_IT(&htim5); // Detener el timer
-    //count = TIM2->CNT;
+    count = TIM2->CNT;
   }
 }
 

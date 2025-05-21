@@ -55,5 +55,29 @@
   "C_Cpp_Runner.useLeakSanitizer": false,
   "C_Cpp_Runner.showCompilationTime": false,
   "C_Cpp_Runner.useLinkTimeOptimization": false,
-  "C_Cpp_Runner.msvcSecureNoWarnings": false
+  "C_Cpp_Runner.msvcSecureNoWarnings": false,
+  "files.associations": {
+    "*.ino": "arduino-output",
+    "40d6807cb22e00101261b3d364ad0000": "c",
+    "808cf8abb02e00101261b3d364ad0000": "c",
+    "9099e41bb52e00101261b3d364ad0000": "c",
+    "60b8da05af2e00101261b3d364ad0000": "c",
+    "00618bbcb32e00101261b3d364ad0000": "c",
+    "406f15a3b32e00101261b3d364ad0000": "c",
+    "806febd7b32e00101261b3d364ad0000": "c",
+    "00f02a25b32e00101261b3d364ad0000": "c",
+    "4046593cb42e00101261b3d364ad0000": "c",
+    "10329c1faf2e00101261b3d364ad0000": "c",
+    "d0745f46b32e00101261b3d364ad0000": "c",
+    "e044b5fab42e00101261b3d364ad0000": "c",
+    "b002945fb12e00101261b3d364ad0000": "c",
+    "30f6272db42e00101261b3d364ad0000": "c",
+    "001a9448b12e00101261b3d364ad0000": "c",
+    "7050d50cb52e00101261b3d364ad0000": "c",
+    "40808ad7b22e00101261b3d364ad0000": "c",
+    "7027a4fdb42e00101261b3d364ad0000": "c",
+    "2019c5fbb22e00101261b3d364ad0000": "c",
+    "409b6bc5b42e00101261b3d364ad0000": "c",
+    "a0ff01a0b12e00101261b3d364ad0000": "c"
+  }
 }

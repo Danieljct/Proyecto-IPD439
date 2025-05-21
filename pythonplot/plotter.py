@@ -1,81 +1,53 @@
 import serial
-import matplotlib.pyplot as plt
-import re
-import numpy as np
+import struct
 import time
+import csv
 
 # Configuración del puerto serial
-# Reemplaza 'COM3' con el nombre de tu puerto serial
-# Reemplaza 9600 con la velocidad en baudios de tu comunicación UART
 SERIAL_PORT = 'COM18'
 BAUD_RATE = 2000000
 
-# Configurar la gráfica interactiva
-plt.ion()
-fig, ax = plt.subplots()
-line, = ax.plot([], [], 'o-') # Usamos 'o-' para puntos y líneas
+buffer = bytearray()
+start_marker = b'DMA x:'
+end_marker = b'END.'
 
-# Configurar los ejes
-ax.set_xlabel("Índice del Dato")
-ax.set_ylabel("Valor del Dato")
-ax.set_title("Datos de DMA en Tiempo Real")
-ax.grid(True)
-
-buffer = ""
+output_file = 'output.csv'
 
 try:
-    # Abrir el puerto serial
     ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
     print(f"Puerto serial {SERIAL_PORT} abierto correctamente.")
 
-    while True:
-        if ser.in_waiting > 0:
-            # Leer datos del puerto serial
-            data = ser.read(ser.in_waiting).decode('utf-8', errors='ignore')
-            buffer += data
+    with open(output_file, mode='w', newline='') as file:
+        writer = csv.writer(file)
 
-            # Procesar el buffer línea por línea o por sets de datos
-            while "END." in buffer:
-                end_index = buffer.find("END.")
-                set_data_str = buffer[:end_index]
-                buffer = buffer[end_index + len("END."):]
+        while True:
+            if ser.in_waiting > 0:
+                data = ser.read(ser.in_waiting)
+                buffer.extend(data)
 
-                # Buscar el inicio del set de datos
-                start_index = set_data_str.find("DMA x:")
-                if start_index != -1:
-                    data_values_str = set_data_str[start_index + len("DMA x:"):].strip()
-                    # Extraer los números
+                while start_marker in buffer and end_marker in buffer:
+                    start_index = buffer.find(start_marker)
+                    end_index = buffer.find(end_marker, start_index)
+
+                    if end_index == -1 or end_index < start_index:
+                        break
+
+                    raw_data = buffer[start_index + len(start_marker):end_index]
+                    buffer = buffer[end_index + len(end_marker):]
+
+                    if len(raw_data) % 4 != 0:
+                        print("Tamaño inválido, descartando paquete.")
+                        continue
+
                     try:
-                        data_values = [int(val) for val in data_values_str.split()]
+                        data_values = struct.unpack(f'{len(raw_data)//4}f', raw_data)
+                        writer.writerow(data_values)  # Escribe una línea por paquete
+                        print(f"Guardados {len(data_values)} valores")
 
-                        if data_values:
-                              
-                            fs = 6660  # Frecuencia de muestreo en Hz
-                            n = len(data_values)  # Número de puntos en la FFT
-                            freqs = np.linspace(0, fs / 2, n)  # Frecuencias de 0 a fs/2 (3.33 kHz)
+                    except struct.error as e:
+                        print(f"Error al desempaquetar: {e}")
 
-                            ax.clear() # Limpiar la gráfica anterior
-                            ax.plot(freqs, data_values, 'o-') # Graficar los nuevos puntos
-                            ax.set_xlabel("Frecuencia (Hz)")
-                            ax.set_ylabel("Valor del Dato")
-                            ax.set_title("Datos de DMA en Tiempo Real")
-                            ax.grid(True)
-
-                            # Fijar los límites del eje Y entre 0 y 4000
-                            ax.set_ylim(0, 40000)
-
-                            # Ajustar los límites del eje X
-                            ax.set_xlim(0, fs / 2)
-
-                            plt.draw()
-                            plt.pause(0.001) # Pequeña pausa para actualizar la gráfica
-
-                    except ValueError:
-                        print("Error al convertir datos a números. Saltando este set.")
-                else:
-                    print("No se encontró el inicio del set de datos ('DMA x:') en el mensaje recibido.")
-
-        time.sleep(0.05) # Pequeña espera para no sobrecargar la CPU
+            time.sleep(0.005)
 
 except serial.SerialException as e:
     print(f"Error de puerto serial: {e}")
@@ -85,5 +57,3 @@ finally:
     if 'ser' in locals() and ser.isOpen():
         ser.close()
         print("Puerto serial cerrado.")
-    plt.ioff()
-    plt.show()

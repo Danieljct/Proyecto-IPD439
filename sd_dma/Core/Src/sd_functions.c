@@ -63,24 +63,22 @@ static void SPI_TxBuffer(uint8_t *buffer, uint16_t len)
   if(spiDmaTransferComplete == 1){
     spiDmaTransferComplete = 0;
     HAL_SPI_Transmit_DMA(HSPI_SDCARD, buffer, len);
-    // *********** Añadir espera aquí ***********
-    while(spiDmaTransferComplete == 0); // Esperar a que la transferencia DMA termine
+
+    while(spiDmaTransferComplete == 0);
   }
 }
 
 static uint8_t SPI_RxByte(void)
 {
   uint8_t dummy, data;
-  dummy = 0xFF; // Envía 0xFF para generar ciclos de reloj
-
+  dummy = 0xFF; 
   if (spiDmaTransferComplete == 1)
   {
     spiDmaTransferComplete=0;
     HAL_SPI_TransmitReceive_DMA(HSPI_SDCARD, &dummy, &data, 1);
-     // *********** Añadir espera aquí ***********
-    while(spiDmaTransferComplete == 0); // Esperar a que la transferencia DMA termine
+    
+    while(spiDmaTransferComplete == 0); 
   }
-  // Importante: Devolver la data después de que la transferencia haya terminado
   return data;
 }
 

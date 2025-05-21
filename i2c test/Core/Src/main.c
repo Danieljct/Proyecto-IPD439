@@ -52,6 +52,7 @@
 LSM6DSL_Object_t MotionSensor;
 volatile uint32_t dataRdyIntReceived;
 uint32_t time, difftime;
+int timerflag = 0;
 
 /* USER CODE END PV */
 
@@ -98,11 +99,13 @@ int main(void)
   MX_USART2_UART_Init();
   MX_I2C1_Init();
   MX_TIM2_Init();
+  MX_TIM3_Init();
   /* USER CODE BEGIN 2 */
   HAL_TIM_Base_Start(&htim2);
   dataRdyIntReceived = 0;
   MEMS_Init();
   printf("AccX AccY AccZ Time");
+  HAL_TIM_Base_Start_IT(&htim3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -116,14 +119,13 @@ int main(void)
 
 	  // Esperar a que los datos del acelerómetro estén listos
 	  // En el bucle principal, después de detectar DRDY
-
+	  if(timerflag){
 	      LSM6DSL_ACC_GetAxesRaw(&MotionSensor, &axes_acc);
 	      printf("%d %d %d %d\r\n", axes_acc.x, axes_acc.y, axes_acc.z, difftime);
-
-
-
+	      timerflag = 0;
+	  }
 	  // Añadir delay para controlar la frecuencia de lectura general
-	  HAL_Delay(2); // Ejemplo: leer cada 100ms
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -389,6 +391,13 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   if (GPIO_Pin == GPIO_PIN_0) {
     dataRdyIntReceived++;
   }
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+	if(htim == &htim3){
+		timerflag = 1;
+	}
+
 }
 
 int _write(int fd, char * ptr, int len)

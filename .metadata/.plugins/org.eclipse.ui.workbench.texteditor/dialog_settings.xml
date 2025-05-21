@@ -3,6 +3,11 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
+		<item value="arm_rfft_fast_f"/>
+		<item value="arm_rfft_fast_f16"/>
+		<item value="mg_z_values"/>
+		<item value="print"/>
+		<item value="fifo_int_triggered"/>
 		<item value="write"/>
 		<item value="disk_write"/>
 		<item value="DMA"/>
@@ -13,10 +18,5 @@
 		<item value="LSM6DSL_CS_GPIO_PORT"/>
 		<item value="time_us"/>
 		<item value="fifo_chunk_buffer"/>
-		<item value="fifo_read_buffer"/>
-		<item value="416.0"/>
-		<item value="12.5"/>
-		<item value="cached_acc_sensitivity"/>
-		<item value="BSP_SPI3_Send"/>
 	</list>
 </section>

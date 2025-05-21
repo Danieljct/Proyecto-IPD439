@@ -69,7 +69,7 @@
 #error FIFO_WATERMARK_WORDS cannot exceed 2047
 #endif
 
-#define fft_points 2048
+#define fft_points 4096
 #define NUM_MUESTRAS 682
 #define comments
 /* USER CODE END PD */
@@ -233,10 +233,12 @@ int main(void)
 	          HAL_Delay(1);
 	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
 	      }
+	    float32_t fft_in2[fft_points];
+	    memcpy(fft_in2, fft_in, sizeof(fft_in));
 
         if(startfft && finish){
           int STARTtiempofft = TIM2->CNT;
-          arm_rfft_fast_f32(&fft_instance,fft_in,fft_z, 0);
+          arm_rfft_fast_f32(&fft_instance,fft_in2,fft_z, 0);
           // Calcular DC y Nyquist por separado
           magnitudes[0] = fabsf(fft_z[0]);
           #if (fft_points % 2 == 0) // Si N es par, hay componente Nyquist
@@ -254,7 +256,7 @@ int main(void)
           // Enviar final
           const char* footer = "END.";
           HAL_UART_Transmit(&huart2, (uint8_t*)footer, strlen(footer), HAL_MAX_DELAY);
-          for (int k = 0; k<fft_points; k++) fft_in[k]=0;
+          //for (int k = 0; k<fft_points; k++) fft_in[k]=0;
         	startfft = 0;
         }
 	      // Ceder tiempo
@@ -584,10 +586,10 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
     hdma_memtomem_dma1_channel1.XferCpltCallback = &HAL_DMA_Callback;
     HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_z_values, &fft_in[cantidad_sets], sets_leidos);
     cantidad_sets += sets_leidos;
-    if (cantidad_sets >= 600) {
+    if (cantidad_sets >= 4000) {
         cantidad_sets = 0;
-        startfft = 1;
     }
+    startfft = 1;
     /*float32_t fft_in[fft_points] = {0};
     memcpy(fft_in, mg_z_values, sizeof(mg_z_values)/2);
 #ifdef comments

@@ -1,4 +1,4 @@
-17:45:36 **** Incremental Build of configuration Debug for project proyecto_1 ****
+18:09:17 **** Incremental Build of configuration Debug for project proyecto_1 ****
 make -j4 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
 ../Core/Src/main.c: In function 'main':
@@ -6,18 +6,18 @@ arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DU
   150 |         arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
       |                    ^~~~~~
 ../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
-../Core/Src/main.c:388:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
-  388 |     io_ctx.WriteReg = SPI_Send;
+../Core/Src/main.c:390:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  390 |     io_ctx.WriteReg = SPI_Send;
       |                     ^
-../Core/Src/main.c:389:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
-  389 |     io_ctx.ReadReg = SPI_Recv;
+../Core/Src/main.c:391:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  391 |     io_ctx.ReadReg = SPI_Recv;
       |                    ^
-../Core/Src/main.c:380:11: warning: unused variable 'sens_a' [-Wunused-variable]
-  380 |     float sens_a;
+../Core/Src/main.c:382:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  382 |     float sens_a;
       |           ^~~~~~
 ../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
-../Core/Src/main.c:585:52: warning: passing argument 2 of 'HAL_DMA_Start_IT' makes integer from pointer without a cast [-Wint-conversion]
-  585 |     HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_z_values, &fft_in[cantidad_sets], sets_leidos);
+../Core/Src/main.c:587:52: warning: passing argument 2 of 'HAL_DMA_Start_IT' makes integer from pointer without a cast [-Wint-conversion]
+  587 |     HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_z_values, &fft_in[cantidad_sets], sets_leidos);
       |                                                    ^~~~~~~~~~~
       |                                                    |
       |                                                    float32_t * {aka float *}
@@ -28,8 +28,8 @@ In file included from ../Core/Inc/stm32l4xx_hal_conf.h:266,
 C:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_dma.h:766:70: note: expected 'uint32_t' {aka 'long unsigned int'} but argument is of type 'float32_t *' {aka 'float *'}
   766 | HAL_StatusTypeDef HAL_DMA_Start_IT(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength);
       |                                                             ~~~~~~~~~^~~~~~~~~~
-../Core/Src/main.c:585:65: warning: passing argument 3 of 'HAL_DMA_Start_IT' makes integer from pointer without a cast [-Wint-conversion]
-  585 |     HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_z_values, &fft_in[cantidad_sets], sets_leidos);
+../Core/Src/main.c:587:65: warning: passing argument 3 of 'HAL_DMA_Start_IT' makes integer from pointer without a cast [-Wint-conversion]
+  587 |     HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_z_values, &fft_in[cantidad_sets], sets_leidos);
       |                                                                 ^~~~~~~~~~~~~~~~~~~~~~
       |                                                                 |
       |                                                                 float32_t * {aka float *}
@@ -42,11 +42,11 @@ Finished building target: proyecto_1.elf
 arm-none-eabi-size  proyecto_1.elf 
 arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
    text	   data	    bss	    dec	    hex	filename
- 172292	    492	  48044	 220828	  35e9c	proyecto_1.elf
+ 172292	    492	  68524	 241308	  3ae9c	proyecto_1.elf
 Finished building: default.size.stdout
  
 Finished building: proyecto_1.list
  
 
-17:45:41 Build Finished. 0 errors, 6 warnings. (took 4s.603ms)
+18:09:22 Build Finished. 0 errors, 6 warnings. (took 4s.756ms)
 

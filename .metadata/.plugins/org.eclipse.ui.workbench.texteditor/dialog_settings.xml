@@ -3,6 +3,10 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
+		<item value="fft_instance"/>
+		<item value="HAL_DMA_MEM2MEM_Callback"/>
+		<item value="HAL_DMA_MEM2MENM_Callback"/>
+		<item value="last_dma_read_bytes"/>
 		<item value="arm_rfft_fast_f"/>
 		<item value="arm_rfft_fast_f16"/>
 		<item value="mg_z_values"/>
@@ -14,9 +18,5 @@
 		<item value="myprintf"/>
 		<item value="generate_sine_to_csv"/>
 		<item value="fftLen"/>
-		<item value="_us"/>
-		<item value="LSM6DSL_CS_GPIO_PORT"/>
-		<item value="time_us"/>
-		<item value="fifo_chunk_buffer"/>
 	</list>
 </section>

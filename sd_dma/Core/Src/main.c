@@ -27,6 +27,7 @@
 #include <stdio.h>
 #include <stdarg.h> //for va_list var arg functions
 #include <math.h>   // Para sin() y M_PI
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -159,7 +160,7 @@ int main(void)
                               5.0,                // Amplitud = 5.0
                               2.0,                // Frecuencia = 2 Hz (2 ciclos por segundo)
                               3.0,                // Duración = 3 segundos
-                              15                 // Número de puntos = 150 (generará 150 puntos en 3 seg)
+                              4096                 // Número de puntos = 150 (generará 150 puntos en 3 seg)
                           );
 
           if (res == FR_OK) {
@@ -421,74 +422,99 @@ static void MX_GPIO_Init(void)
   /* USER CODE END MX_GPIO_Init_2 */
 }
 
-/* USER CODE BEGIN 4 */
+/* USER CODE BEGIN 4 */#define MAX_POINTS_BUFFER_SIZE (4096 * 16) // Aproximadamente 65KB
+
 FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points) {
     FIL fil;         // Objeto de archivo FatFs
     FRESULT fr;      // Variable para códigos de retorno de FatFs
     UINT bytes_written; // Variable para almacenar bytes escritos por f_write
-    char data_buffer[80]; // Buffer para formatear cada línea del CSV, ajusta tamaño si es necesario
 
-    // --- 1. Abrir/Crear el archivo en modo escritura ---
+    // --- Buffer estático para todos los puntos ---
+    // ¡Precaución! Un buffer de este tamaño (aprox. 65KB) puede ser grande para la RAM de algunos microcontroladores.
+    // Asegúrate de que tu sistema tiene suficiente memoria.
+    static char all_points_buffer[MAX_POINTS_BUFFER_SIZE];
+    all_points_buffer[0] = '\0'; // Inicializar el buffer como una cadena vacía
+
+    // --- 1. Abrir/Crear el archivo en modo escritura (FA_WRITE) ---
     // FA_CREATE_ALWAYS: Crea un archivo nuevo. Si ya existe, lo sobrescribe.
-    // FA_WRITE: Permiso de escritura.
     fr = f_open(&fil, filename, FA_CREATE_ALWAYS | FA_WRITE);
     if (fr != FR_OK) {
         printf("Error: No se pudo abrir/crear el archivo '%s'. Codigo FatFs: %d\r\n", filename, fr);
         return fr;
     }
 
-    // --- 2. Escribir la cabecera del CSV (opcional pero recomendado) ---
-    // Usamos snprintf para seguridad contra desbordamiento de buffer
-    snprintf(data_buffer, sizeof(data_buffer), "Tiempo (s),Valor\n");
-    // Usamos f_write para escribir el buffer formateado
-    fr = f_write(&fil, data_buffer, strlen(data_buffer), &bytes_written);
-    if (fr != FR_OK || bytes_written < strlen(data_buffer)) {
-        printf("Error: No se pudo escribir la cabecera en '%s'. Codigo FatFs: %d\r\n", filename, fr);
-        f_close(&fil); // Intentar cerrar el archivo aunque haya error
-        return fr;
+    // --- 2. Generar puntos y acumular en el buffer ---
+    printf("Generando %d puntos sinusoidales en el buffer...\r\n", num_points);
+    char temp_point_buffer[30]; // Buffer temporal para cada punto individual
+
+    // Verificar si el número de puntos excede la capacidad del buffer
+    if (num_points > 4096) {
+        printf("Error: El número de puntos (%d) excede el máximo soportado por el buffer estático (4096).\r\n", num_points);
+        f_close(&fil);
+        return FR_INVALID_PARAMETER; // O un código de error apropiado
     }
-
-    // --- 3. Generar puntos y escribir en el archivo ---
-    printf("Generando %d puntos sinusoidales...\r\n", num_points);
+    difftime = TIM2->CNT - time;
     for (int i = 0; i < num_points; ++i) {
-        // Calcular el tiempo actual 't'
-        // Asegura división flotante para obtener pasos de tiempo correctos
-        // Se usa (num_points - 1) para que el último punto coincida exactamente con 'duration'
         double t = (double)i * duration / (double)(num_points > 1 ? num_points - 1 : 1);
-
-        // Calcular el valor de la sinusoide y(t) = A * sin(2 * pi * f * t)
         double value = amplitude * sin(2.0 * M_PI * frequency * t);
 
-        // Formatear la línea de datos como "tiempo,valor\n"
-        // Ajusta "%.4f" para la precisión deseada
-        int len = snprintf(data_buffer, sizeof(data_buffer), "%.4f,%.4f\n", t, value);
+        // Formatear el valor y agregarlo al buffer temporal
+        int len = snprintf(temp_point_buffer, sizeof(temp_point_buffer), "%.4f", value);
 
-        // Verificar si snprintf truncó la salida (opcional pero buena práctica)
-         if (len < 0 || len >= sizeof(data_buffer)) {
-             printf("Advertencia: Buffer insuficiente al formatear punto %d\r\n", i);
-             // Considerar cómo manejar esto: continuar, parar, etc.
-         }
+        // Verificar si snprintf truncó la salida
+        if (len < 0 || len >= sizeof(temp_point_buffer)) {
+            printf("Advertencia: Buffer temporal insuficiente al formatear punto %d.\r\n", i);
+            // Esto podría indicar que tu valor flotante es demasiado grande para el formato "%.4f"
+        }
 
-        // Escribir la línea formateada en el archivo
-         time = TIM2->CNT;
-        fr = f_write(&fil, data_buffer, strlen(data_buffer), &bytes_written);
-        difftime = TIM2->CNT - time;
-        myprintf("Tiempo de ejecución: %f s\r\n", difftime/80000000.0);
-        if (fr != FR_OK || bytes_written < strlen(data_buffer)) {
-            printf("Error: No se pudo escribir el punto %d en '%s'. Codigo FatFs: %d\r\n", i, filename, fr);
-            f_close(&fil); // Intentar cerrar
-            return fr;
+        // Concatenar el valor al buffer principal
+        // Asegurarse de que hay espacio suficiente en all_points_buffer ANTES de concatenar
+        if (strlen(all_points_buffer) + strlen(temp_point_buffer) + (i < num_points - 1 ? 1 : 0) + 2 >= MAX_POINTS_BUFFER_SIZE) {
+            printf("Error: Buffer principal insuficiente para todos los puntos. Reduce num_points o aumenta MAX_POINTS_BUFFER_SIZE.\r\n");
+            f_close(&fil);
+            return FR_DISK_ERR; // O un error más específico
+        }
+        strcat(all_points_buffer, temp_point_buffer);
+
+        // Añadir la coma si no es el último punto
+        if (i < num_points - 1) {
+            strcat(all_points_buffer, ",");
         }
     }
+    // Añadir un salto de línea al final de la fila de puntos
+    strcat(all_points_buffer, "\n");
 
-    // --- 4. Cerrar el archivo ---
-    fr = f_close(&fil);
-    if (fr != FR_OK) {
-        printf("Error: No se pudo cerrar el archivo '%s'. Codigo FatFs: %d\r\n", filename, fr);
+    // --- 3. Escribir el buffer completo en el archivo ---
+    printf("Escribiendo todos los puntos en el archivo...\r\n");
+
+    time = TIM2->CNT;
+    fr = f_write(&fil, all_points_buffer, strlen(all_points_buffer), &bytes_written);
+
+    myprintf("Tiempo de ejecución: %f s\r\n", difftime/80000000.0);
+
+    if (fr != FR_OK || bytes_written < strlen(all_points_buffer)) {
+        printf("Error: No se pudieron escribir todos los puntos en '%s'. Codigo FatFs: %d\r\n", filename, fr);
+        f_close(&fil);
         return fr;
     }
 
-    printf("Datos sinusoidales guardados exitosamente en '%s'\r\n", filename);
+    // --- 4. Escribir la segunda línea en el mismo archivo ---
+    char second_line_data[] = "Datos adicionales del experimento.\n";
+    fr = f_write(&fil, second_line_data, strlen(second_line_data), &bytes_written);
+    if (fr != FR_OK || bytes_written < strlen(second_line_data)) {
+        printf("Error: No se pudo escribir la segunda línea en '%s'. Codigo FatFs: %d\r\n", filename, fr);
+        f_close(&fil);
+        return fr;
+    }
+
+    // --- 5. Cerrar el archivo ---
+    fr = f_close(&fil);
+    if (fr != FR_OK) {
+        printf("Error: No se pudo cerrar el archivo '%s'. Codigo FatFs: %d\r\r\n", filename, fr);
+        return fr;
+    }
+
+    printf("Datos sinusoidales (fila única) y línea adicional guardados exitosamente en '%s'\r\n", filename);
     return FR_OK; // Indicar éxito
 }
 

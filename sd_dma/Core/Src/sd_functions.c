@@ -77,7 +77,7 @@ static uint8_t SPI_RxByte(void)
     spiDmaTransferComplete=0;
     HAL_SPI_TransmitReceive_DMA(HSPI_SDCARD, &dummy, &data, 1);
     
-    while(spiDmaTransferComplete == 0); 
+    while(spiDmaTransferComplete == 0);
   }
   return data;
 }

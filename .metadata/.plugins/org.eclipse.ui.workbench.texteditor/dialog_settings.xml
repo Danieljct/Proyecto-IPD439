@@ -3,6 +3,7 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
+		<item value="SPI_TxBuffer"/>
 		<item value="fft_instance"/>
 		<item value="HAL_DMA_MEM2MEM_Callback"/>
 		<item value="HAL_DMA_MEM2MENM_Callback"/>
@@ -17,6 +18,5 @@
 		<item value="DMA"/>
 		<item value="myprintf"/>
 		<item value="generate_sine_to_csv"/>
-		<item value="fftLen"/>
 	</list>
 </section>

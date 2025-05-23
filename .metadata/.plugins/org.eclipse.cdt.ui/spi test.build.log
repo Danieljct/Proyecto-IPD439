@@ -1,37 +1,10 @@
-19:28:16 **** Incremental Build of configuration Debug for project spi test ****
+15:32:33 **** Incremental Build of configuration Debug for project spi test ****
 make -j4 all 
-arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
-../Core/Src/main.c: In function 'main':
-../Core/Src/main.c:124:33: warning: format '%d' expects argument of type 'int', but argument 5 has type 'uint32_t' {aka 'long unsigned int'} [-Wformat=]
-  124 |               printf("%d %d %d %d\r\n", axes_acc.x, axes_acc.y, axes_acc.z, difftime);
-      |                                ~^                                           ~~~~~~~~
-      |                                 |                                           |
-      |                                 int                                         uint32_t {aka long unsigned int}
-      |                                %ld
-../Core/Src/main.c:118:19: warning: unused variable 'ret_status' [-Wunused-variable]
-  118 |           int32_t ret_status; // Variable para guardar el código de retorno
-      |                   ^~~~~~~~~~
-../Core/Src/main.c:117:19: warning: unused variable 'drdy_status' [-Wunused-variable]
-  117 |           uint8_t drdy_status = 0;
-      |                   ^~~~~~~~~~~
-../Core/Src/main.c: In function 'MEMS_Init':
-../Core/Src/main.c:281:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
-  281 |     io_ctx.ReadReg = SPI_Recv;
-      |                    ^
-../Core/Src/main.c:282:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
-  282 |     io_ctx.WriteReg = SPI_Send;
-      |                     ^
-arm-none-eabi-gcc -o "spi test.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\i2c test\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="spi test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: spi test.elf
- 
 arm-none-eabi-size  spi\ test.elf 
-arm-none-eabi-objdump -h -S spi\ test.elf  > "spi test.list"
    text	   data	    bss	    dec	    hex	filename
   49944	    468	   2452	  52864	   ce80	spi test.elf
 Finished building: default.size.stdout
  
-Finished building: spi test.list
- 
 
-19:28:19 Build Finished. 0 errors, 5 warnings. (took 3s.751ms)
+15:32:34 Build Finished. 0 errors, 0 warnings. (took 1s.232ms)
 

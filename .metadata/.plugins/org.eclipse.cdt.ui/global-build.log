@@ -43,3 +43,17 @@ arm-none-eabi-size  spi\ test.elf
   49944	    468	   2452	  52864	   ce80	spi test.elf
 Finished building: default.size.stdout
  
+16:22:55 **** Build of configuration Debug for project proyecto_1 ****
+make -j4 all 
+arm-none-eabi-size  proyecto_1.elf 
+   text	   data	    bss	    dec	    hex	filename
+ 172292	    492	  68524	 241308	  3ae9c	proyecto_1.elf
+Finished building: default.size.stdout
+ 
+16:44:40 **** Incremental Build of configuration Debug for project spi test ****
+make -j4 all 
+arm-none-eabi-size  spi\ test.elf 
+   text	   data	    bss	    dec	    hex	filename
+  49944	    468	   2452	  52864	   ce80	spi test.elf
+Finished building: default.size.stdout
+ 

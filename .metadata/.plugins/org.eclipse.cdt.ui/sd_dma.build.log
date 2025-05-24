@@ -1,10 +1,17 @@
-23:21:20 **** Incremental Build of configuration Debug for project sd_dma ****
+15:31:24 **** Incremental Build of configuration Debug for project sd_dma ****
 make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FreeRTOS/Source/include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FreeRTOS/Source/CMSIS_RTOS -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FreeRTOS/Source/portable/GCC/ARM_CM4F -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+arm-none-eabi-gcc -o "sd_dma.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\sd_dma\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="sd_dma.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: sd_dma.elf
+ 
 arm-none-eabi-size  sd_dma.elf 
+arm-none-eabi-objdump -h -S sd_dma.elf  > "sd_dma.list"
    text	   data	    bss	    dec	    hex	filename
-  88120	    496	  74648	 163264	  27dc0	sd_dma.elf
+  86400	    496	   6848	  93744	  16e30	sd_dma.elf
 Finished building: default.size.stdout
  
+Finished building: sd_dma.list
+ 
 
-23:21:22 Build Finished. 0 errors, 0 warnings. (took 1s.691ms)
+15:31:28 Build Finished. 0 errors, 0 warnings. (took 4s.773ms)
 

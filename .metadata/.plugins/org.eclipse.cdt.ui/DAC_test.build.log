@@ -1,17 +1,7 @@
-11:53:38 **** Incremental Build of configuration Debug for project DAC_test ****
-make -j8 all 
-arm-none-eabi-gcc "../Core/Src/tim.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/tim.d" -MT"Core/Src/tim.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/tim.o"
-arm-none-eabi-gcc -o "DAC_test.elf" @"objects.list"   -mcpu=cortex-m4 -T"C:\IPD439\Proyecto-IPD439\DAC_test\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="DAC_test.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
-Finished building target: DAC_test.elf
- 
-arm-none-eabi-size  DAC_test.elf 
-arm-none-eabi-objdump -h -S DAC_test.elf  > "DAC_test.list"
-   text	   data	    bss	    dec	    hex	filename
-  21740	    104	  10400	  32244	   7df4	DAC_test.elf
-Finished building: default.size.stdout
- 
-Finished building: DAC_test.list
- 
+23:54:54 **** Build of configuration Debug for project DAC_test ****
+make -j4 all 
+make: *** No rule to make target 'C:/Users/danie/OneDrive - Universidad Técnica Federico Santa María/Escritorio/u/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Src/stm32l4xx_hal.c', needed by 'Drivers/STM32L4xx_HAL_Driver/stm32l4xx_hal.o'.  Stop.
+"make -j4 all" terminated with exit code 2. Build might be incomplete.
 
-11:53:40 Build Finished. 0 errors, 0 warnings. (took 2s.62ms)
+23:54:56 Build Failed. 1 errors, 0 warnings. (took 1s.118ms)
 

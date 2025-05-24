@@ -36,14 +36,14 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi){
 static void SELECT(void)
 {
   HAL_GPIO_WritePin(SD_CS_PORT, SD_CS_PIN, GPIO_PIN_RESET);
-  HAL_Delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
 }
 
 /* slave deselect */
 static void DESELECT(void)
 {
   HAL_GPIO_WritePin(SD_CS_PORT, SD_CS_PIN, GPIO_PIN_SET);
-  HAL_Delay(1);
+  vTaskDelay(1/portTICK_PERIOD_MS);
 }
 
 /* SPI transmit a byte */
@@ -63,22 +63,26 @@ static void SPI_TxBuffer(uint8_t *buffer, uint16_t len)
   if(spiDmaTransferComplete == 1){
     spiDmaTransferComplete = 0;
     HAL_SPI_Transmit_DMA(HSPI_SDCARD, buffer, len);
-
-    while(spiDmaTransferComplete == 0);
+    // *********** Añadir espera aquí ***********
+    while(spiDmaTransferComplete == 0){
+    	printf("niggers\n"); // Esperar a que la transferencia DMA termine
+    }
   }
 }
 
 static uint8_t SPI_RxByte(void)
 {
   uint8_t dummy, data;
-  dummy = 0xFF; 
+  dummy = 0xFF; // Envía 0xFF para generar ciclos de reloj
+
   if (spiDmaTransferComplete == 1)
   {
     spiDmaTransferComplete=0;
     HAL_SPI_TransmitReceive_DMA(HSPI_SDCARD, &dummy, &data, 1);
-    
-    while(spiDmaTransferComplete == 0);
+     // *********** Añadir espera aquí ***********
+    while(spiDmaTransferComplete == 0); // Esperar a que la transferencia DMA termine
   }
+  // Importante: Devolver la data después de que la transferencia haya terminado
   return data;
 }
 

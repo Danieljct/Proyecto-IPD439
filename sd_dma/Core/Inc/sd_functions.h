@@ -31,6 +31,12 @@ DSTATUS SD_disk_status (BYTE pdrv);
 DRESULT SD_disk_read (BYTE pdrv, BYTE* buff, DWORD sector, UINT count);
 DRESULT SD_disk_write (BYTE pdrv, const BYTE* buff, DWORD sector, UINT count);
 DRESULT SD_disk_ioctl (BYTE pdrv, BYTE cmd, void* buff);
+void init_spi_dma_sync(void);
+
+// Callbacks del HAL SPI DMA
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi);
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi);
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi);
 
 #define SPI_TIMEOUT 100
 #include "ff_gen_drv.h"

@@ -3,6 +3,9 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
+		<item value="timer1"/>
+		<item value="Timer2"/>
+		<item value="SPI_RxByte"/>
 		<item value="SPI_TxBuffer"/>
 		<item value="fft_instance"/>
 		<item value="HAL_DMA_MEM2MEM_Callback"/>
@@ -15,8 +18,5 @@
 		<item value="fifo_int_triggered"/>
 		<item value="write"/>
 		<item value="disk_write"/>
-		<item value="DMA"/>
-		<item value="myprintf"/>
-		<item value="generate_sine_to_csv"/>
 	</list>
 </section>

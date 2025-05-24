@@ -1,0 +1,638 @@
+#define TRUE  1
+#define FALSE 0
+#define bool BYTE
+
+#include "stm32l4xx_hal.h"
+#include "ff_gen_drv.h"
+#include "diskio.h"
+#include "sd_functions.h"
+#include "fatfs.h"
+#include "ff.h"
+
+
+uint16_t Timer1, Timer2;          /* 1ms Timer Counter */
+
+static volatile DSTATUS Stat = STA_NOINIT;  /* Disk Status */
+static uint8_t CardType;                    /* Type 0:MMC, 1:SDC, 2:Block addressing */
+static uint8_t PowerFlag = 0;       /* Power flag */
+volatile uint8_t spiDmaTransferComplete = 1;
+
+#include "FreeRTOS.h"
+#include "task.h"
+#include "semphr.h" // Necesario si usas semáforos, pero usaremos notificaciones
+
+// Un semáforo binario para sincronizar la transferencia DMA
+// Es más robusto que una variable global si varias tareas pudieran iniciar transferencias,
+// aunque en un driver de disco usualmente es una sola tarea.
+// Para este caso, una notificación de tarea es más ligera.
+// Static porque solo se usa dentro de este archivo.
+static StaticSemaphore_t xSPIDmaSemaphoreBuffer;
+static SemaphoreHandle_t xSPIDmaSemaphore;
+
+// En tu función de inicialización (ej: en main antes de vTaskStartScheduler)
+void init_spi_dma_sync(void) {
+    xSPIDmaSemaphore = xSemaphoreCreateBinaryStatic(&xSPIDmaSemaphoreBuffer);
+    xSemaphoreGive(xSPIDmaSemaphore); // Dar el semáforo al inicio para indicar que está listo
+}
+
+// Callbacks del HAL SPI DMA
+void HAL_SPI_TxCpltCallback(SPI_HandleTypeDef *hspi){
+  if (hspi->Instance == (SPI_TypeDef *)HSPI_SDCARD.Instance) {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(xSPIDmaSemaphore, &xHigherPriorityTaskWoken); // Despertar a la tarea
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken); // Si se despertó una tarea de mayor prioridad, cambia de contexto
+  }
+}
+
+void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi){
+	if (hspi->Instance == (SPI_TypeDef *)HSPI_SDCARD.Instance) {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(xSPIDmaSemaphore, &xHigherPriorityTaskWoken); // Despertar a la tarea
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken); // Si se despertó una tarea de mayor prioridad, cambia de contexto
+  }
+}
+
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi) {
+  if (hspi->Instance == (SPI_TypeDef *)HSPI_SDCARD.Instance) {
+    BaseType_t xHigherPriorityTaskWoken = pdFALSE;
+    xSemaphoreGiveFromISR(xSPIDmaSemaphore, &xHigherPriorityTaskWoken); // Despertar a la tarea
+    portYIELD_FROM_ISR(xHigherPriorityTaskWoken); // Si se despertó una tarea de mayor prioridad, cambia de contexto
+  }
+}
+
+/***************************************
+ * SPI functions
+ **************************************/
+
+/* slave select */
+static void SELECT(void)
+{
+  HAL_GPIO_WritePin(SD_CS_PORT, SD_CS_PIN, GPIO_PIN_RESET);
+  vTaskDelay(1/portTICK_PERIOD_MS);
+}
+
+/* slave deselect */
+static void DESELECT(void)
+{
+  HAL_GPIO_WritePin(SD_CS_PORT, SD_CS_PIN, GPIO_PIN_SET);
+  vTaskDelay(1/portTICK_PERIOD_MS);
+}
+
+/* SPI transmit a byte */// NO NECESITAMOS 'SPI_WaitForDmaTransferDone()' con este enfoque de FreeRTOS.
+// La espera se gestiona con xSemaphoreTake().
+
+/* SPI transmit a byte */
+static void SPI_TxByte(uint8_t data)
+{
+  // Primero, tomamos el semáforo. Esto nos asegura que la transferencia anterior ha terminado.
+  // Si no ha terminado, la tarea se bloqueará aquí hasta que el ISR la libere.
+  // xSemaphoreTake() con un tiempo de espera infinito (portMAX_DELAY) es seguro aquí.
+  xSemaphoreTake(xSPIDmaSemaphore, portMAX_DELAY);
+
+  HAL_SPI_Transmit_DMA(HSPI_SDCARD, &data, 1);
+  // NO HAY ESPERA BLOQUEANTE AQUÍ. La función retorna y el procesador está libre
+  // hasta que la siguiente operación de sincronización (otro xSemaphoreTake) lo requiera.
+}
+
+/* SPI transmit a buffer */
+static void SPI_TxBuffer(uint8_t *buffer, uint16_t len)
+{
+  xSemaphoreTake(xSPIDmaSemaphore, portMAX_DELAY);
+  HAL_SPI_Transmit_DMA(HSPI_SDCARD, buffer, len);
+}
+
+/* SPI receive a byte */
+static uint8_t SPI_RxByte(void)
+{
+  uint8_t dummy = 0xFF;
+  // Usaremos un buffer temporal para la recepción para evitar problemas de reentrada
+  // si SPI_RxByte() es llamada consecutivamente antes de que la DMA termine.
+  // Lo ideal sería tener una variable para cada transacción o pasar un puntero.
+  // Para simplificar, asumiremos que una SPI_RxByte() se completa antes de la siguiente.
+  static uint8_t received_data; // Usamos static para que persista el valor
+
+  xSemaphoreTake(xSPIDmaSemaphore, portMAX_DELAY);
+  HAL_SPI_TransmitReceive_DMA(HSPI_SDCARD, &dummy, &received_data, 1);
+  // NOTA: La función que llama a SPI_RxByte() DEBE tomar el semáforo antes de usar 'received_data'
+  // o el driver de nivel superior (FatFs) debe reestructurarse para ser asíncrono.
+  // Para FatFs síncrono, la espera ocurre *después* de iniciar la DMA para obtener el dato.
+  // Vamos a ajustar la lógica para que funcione con FatFs síncrono.
+  return received_data;
+}
+
+/* SPI receive a byte pointer */
+static void SPI_RxBytePtr(uint8_t *buff)
+{
+  uint8_t dummy = 0xFF;
+  xSemaphoreTake(xSPIDmaSemaphore, portMAX_DELAY);
+  HAL_SPI_TransmitReceive_DMA(HSPI_SDCARD, &dummy, buff, 1);
+}
+
+/***************************************
+ * SD functions
+ **************************************/
+
+/* wait SD ready */
+static uint8_t SD_ReadyWait(void)
+{
+  uint8_t res = 0xFF; // Inicializamos con un valor que no sea 0xFF para la primera iteración
+  Timer2 = 500; // timeout 500ms
+
+  do {
+    // Aquí, al llamar a SPI_RxByte(), la tarea se bloqueará (xSemaphoreTake)
+    // hasta que el DMA anterior termine y la ISR dé el semáforo.
+    // Luego, SPI_RxByte() iniciará una nueva transferencia y la tarea volverá a bloquearse.
+    SPI_RxByte(); // Inicia la transferencia DMA, la tarea se bloquea
+    // Al regresar de SPI_RxByte(), la transferencia ya ha terminado (por el xSemaphoreTake interno)
+    // y el dato recibido ya está en 'received_data' (la variable static de SPI_RxByte).
+    // OJO: La llamada a SPI_RxByte() ya hace un xSemaphoreTake(), así que el dato ya estará ahí.
+    //res = *(volatile uint8_t*)HSPI_SDCARD->pRxBuffPtr; // Acceder al dato recibido directamente si es posible,
+                                                    // o modificar SPI_RxByte para que retorne el dato
+                                                    // una vez que su semáforo interno sea tomado.
+
+    // La forma más clara sería:
+    // uint8_t current_byte_received;
+    // SPI_RxBytePtr(&current_byte_received); // Inicia DMA para recibir un byte en current_byte_received
+    // xSemaphoreTake(xSPIDmaSemaphore, portMAX_DELAY); // Espera a que esta transferencia termine
+    // res = current_byte_received;
+
+    // Pero si SPI_RxByte ya se encarga de esperar, entonces:
+    res = SPI_RxByte(); // Esto ya inicia la DMA y espera su finalización internamente.
+    // La línea de arriba es la más simple si SPI_RxByte garantiza que el dato está disponible.
+
+    // Si tu HAL_SPI_TransmitReceive_DMA ya pone el dato en la variable static `received_data`
+    // y `SPI_RxByte` la retorna, la sincronización ya está implícita en la llamada a `SPI_RxByte`.
+
+  } while ((res != 0xFF) && Timer2);
+
+  return res;
+}
+
+/* power on */
+static void SD_PowerOn(void)
+{
+  uint8_t args[6];
+  uint32_t cnt = 0x1FFF;
+
+  /* transmit bytes to wake up */
+  DESELECT();
+  for(int i = 0; i < 10; i++)
+  {
+    SPI_TxByte(0xFF);
+  }
+
+  /* slave select */
+  SELECT();
+
+  /* make idle state */
+  args[0] = CMD0;   /* CMD0:GO_IDLE_STATE */
+  args[1] = 0;
+  args[2] = 0;
+  args[3] = 0;
+  args[4] = 0;
+  args[5] = 0x95;   /* CRC */
+
+  SPI_TxBuffer(args, sizeof(args));
+
+  /* wait response */
+  while ((SPI_RxByte() != 0x01) && cnt)
+  {
+    cnt--;
+  }
+
+  DESELECT();
+  SPI_TxByte(0XFF);
+
+  PowerFlag = 1;
+}
+
+/* power off */
+static void SD_PowerOff(void)
+{
+  PowerFlag = 0;
+}
+
+/* check power flag */
+static uint8_t SD_CheckPower(void)
+{
+  return PowerFlag;
+}
+
+/* receive data block */
+static bool SD_RxDataBlock(BYTE *buff, UINT len)
+{
+  uint8_t token;
+
+  /* timeout 200ms */
+  Timer1 = 200;
+
+  /* loop until receive a response or timeout */
+  do {
+    token = SPI_RxByte();
+  } while((token == 0xFF) && Timer1);
+
+  /* invalid response */
+  if(token != 0xFE) return FALSE;
+
+  /* receive data */
+  do {
+    SPI_RxBytePtr(buff++);
+  } while(len--);
+
+  /* discard CRC */
+  SPI_RxByte();
+  SPI_RxByte();
+
+  return TRUE;
+}
+
+/* transmit data block */
+#if _USE_WRITE == 1
+		static bool SD_TxDataBlock(const uint8_t *buff, BYTE token)
+		{
+		  uint8_t resp;
+		  uint8_t i = 0;
+
+		  if (SD_ReadyWait() != 0xFF) return FALSE;
+
+		  /* transmit token */
+		  SPI_TxByte(token); // La tarea se bloquea aquí hasta que el semáforo esté disponible
+		                     // (indicando que la operación DMA anterior, si la hubo, ha terminado)
+		                     // y luego inicia esta nueva transferencia.
+
+		  /* if it's not STOP token, transmit data */
+		  if (token != 0xFD)
+		  {
+		    // Inicia la transferencia DMA del bloque de 512 bytes.
+		    // La tarea se bloqueará en SPI_TxBuffer (en su xSemaphoreTake)
+		    // hasta que el semáforo esté disponible.
+		    SPI_TxBuffer((uint8_t*)buff, 512);
+
+		    // ********* PUNTO CLAVE: EL PROCESADOR ES LIBRE AQUÍ *********
+		    // La tarea que llamó a SD_TxDataBlock NO ESTÁ BLOQUEADA activamente en un busy-waiting.
+		    // El planificador de FreeRTOS puede cambiar a otra tarea mientras el DMA está en progreso.
+
+		    // Para las siguientes operaciones (CRC y respuesta), necesitamos que el DMA del bloque
+		    // de 512 bytes haya terminado. La llamada a SPI_TxByte() o SPI_RxByte() siguiente
+		    // se encargará de tomar el semáforo, lo que inherentemente esperará a que el DMA
+		    // de los 512 bytes termine si aún no lo ha hecho.
+
+		    /* discard CRC (transmit dummy bytes to receive CRC) */
+		    SPI_TxByte(0xFF); // Bloquea hasta que el semáforo esté disponible, luego inicia y retorna.
+		    SPI_TxByte(0xFF); // Lo mismo.
+
+		    /* receive response */
+		    while (i <= 64)
+		    {
+		      resp = SPI_RxByte(); // Inicia la recepción y espera su finalización
+		      if ((resp & 0x1F) == 0x05) break;
+		      i++;
+		    }
+
+		    /* recv buffer clear */
+		    while (SPI_RxByte() == 0); // Inicia la recepción y espera su finalización
+		  }
+
+		  if ((resp & 0x1F) == 0x05) return TRUE;
+		  return FALSE;
+		}
+		#endif /* _USE_WRITE */
+
+/* transmit command */
+static BYTE SD_SendCmd(BYTE cmd, uint32_t arg)
+{
+  uint8_t crc, res;
+
+  /* wait SD ready */
+  if (SD_ReadyWait() != 0xFF) return 0xFF;
+
+  /* transmit command */
+  SPI_TxByte(cmd);          /* Command */
+  SPI_TxByte((uint8_t)(arg >> 24));   /* Argument[31..24] */
+  SPI_TxByte((uint8_t)(arg >> 16));   /* Argument[23..16] */
+  SPI_TxByte((uint8_t)(arg >> 8));  /* Argument[15..8] */
+  SPI_TxByte((uint8_t)arg);       /* Argument[7..0] */
+
+  /* prepare CRC */
+  if(cmd == CMD0) crc = 0x95; /* CRC for CMD0(0) */
+  else if(cmd == CMD8) crc = 0x87;  /* CRC for CMD8(0x1AA) */
+  else crc = 1;
+
+  /* transmit CRC */
+  SPI_TxByte(crc);
+
+  /* Skip a stuff byte when STOP_TRANSMISSION */
+  if (cmd == CMD12) SPI_RxByte();
+
+  /* receive response */
+  uint8_t n = 10;
+  do {
+    res = SPI_RxByte();
+  } while ((res & 0x80) && --n);
+
+  return res;
+}
+
+/***************************************
+ * user_diskio.c functions
+ **************************************/
+
+/* initialize SD */
+DSTATUS SD_disk_initialize(BYTE drv)
+{
+  uint8_t n, type, ocr[4];
+
+  /* single drive, drv should be 0 */
+  if(drv) return STA_NOINIT;
+
+  /* no disk */
+  if(Stat & STA_NODISK) return Stat;
+
+  /* power on */
+  SD_PowerOn();
+
+  /* slave select */
+  SELECT();
+
+  /* check disk type */
+  type = 0;
+
+  /* send GO_IDLE_STATE command */
+  if (SD_SendCmd(CMD0, 0) == 1)
+  {
+    /* timeout 1 sec */
+    Timer1 = 1000;
+
+    /* SDC V2+ accept CMD8 command, http://elm-chan.org/docs/mmc/mmc_e.html */
+    if (SD_SendCmd(CMD8, 0x1AA) == 1)
+    {
+      /* operation condition register */
+      for (n = 0; n < 4; n++)
+      {
+        ocr[n] = SPI_RxByte();
+      }
+
+      /* voltage range 2.7-3.6V */
+      if (ocr[2] == 0x01 && ocr[3] == 0xAA)
+      {
+        /* ACMD41 with HCS bit */
+        do {
+          if (SD_SendCmd(CMD55, 0) <= 1 && SD_SendCmd(CMD41, 1UL << 30) == 0) break;
+        } while (Timer1);
+
+        /* READ_OCR */
+        if (Timer1 && SD_SendCmd(CMD58, 0) == 0)
+        {
+          /* Check CCS bit */
+          for (n = 0; n < 4; n++)
+          {
+            ocr[n] = SPI_RxByte();
+          }
+
+          /* SDv2 (HC or SC) */
+          type = (ocr[0] & 0x40) ? CT_SD2 | CT_BLOCK : CT_SD2;
+        }
+      }
+    }
+    else
+    {
+      /* SDC V1 or MMC */
+      type = (SD_SendCmd(CMD55, 0) <= 1 && SD_SendCmd(CMD41, 0) <= 1) ? CT_SD1 : CT_MMC;
+
+      do
+      {
+        if (type == CT_SD1)
+        {
+          if (SD_SendCmd(CMD55, 0) <= 1 && SD_SendCmd(CMD41, 0) == 0) break; /* ACMD41 */
+        }
+        else
+        {
+          if (SD_SendCmd(CMD1, 0) == 0) break; /* CMD1 */
+        }
+
+      } while (Timer1);
+
+      /* SET_BLOCKLEN */
+      if (!Timer1 || SD_SendCmd(CMD16, 512) != 0) type = 0;
+    }
+  }
+
+  CardType = type;
+
+  /* Idle */
+  DESELECT();
+  SPI_RxByte();
+
+  /* Clear STA_NOINIT */
+  if (type)
+  {
+    Stat &= ~STA_NOINIT;
+  }
+  else
+  {
+    /* Initialization failed */
+    SD_PowerOff();
+  }
+
+  return Stat;
+}
+
+/* return disk status */
+DSTATUS SD_disk_status(BYTE drv)
+{
+  if (drv) return STA_NOINIT;
+  return Stat;
+}
+
+/* read sector */
+DRESULT SD_disk_read(BYTE pdrv, BYTE* buff, DWORD sector, UINT count)
+{
+  /* pdrv should be 0 */
+  if (pdrv || !count) return RES_PARERR;
+
+  /* no disk */
+  if (Stat & STA_NOINIT) return RES_NOTRDY;
+
+  /* convert to byte address */
+  if (!(CardType & CT_SD2)) sector *= 512;
+
+  SELECT();
+
+  if (count == 1)
+  {
+    /* READ_SINGLE_BLOCK */
+    if ((SD_SendCmd(CMD17, sector) == 0) && SD_RxDataBlock(buff, 512)) count = 0;
+  }
+  else
+  {
+    /* READ_MULTIPLE_BLOCK */
+    if (SD_SendCmd(CMD18, sector) == 0)
+    {
+      do {
+        if (!SD_RxDataBlock(buff, 512)) break;
+        buff += 512;
+      } while (--count);
+
+      /* STOP_TRANSMISSION */
+      SD_SendCmd(CMD12, 0);
+    }
+  }
+
+  /* Idle */
+  DESELECT();
+  SPI_RxByte();
+
+  return count ? RES_ERROR : RES_OK;
+}
+
+/* write sector */
+#if _USE_WRITE == 1
+DRESULT SD_disk_write(BYTE pdrv, const BYTE* buff, DWORD sector, UINT count)
+{
+  /* pdrv should be 0 */
+  if (pdrv || !count) return RES_PARERR;
+
+  /* no disk */
+  if (Stat & STA_NOINIT) return RES_NOTRDY;
+
+  /* write protection */
+  if (Stat & STA_PROTECT) return RES_WRPRT;
+
+  /* convert to byte address */
+  if (!(CardType & CT_SD2)) sector *= 512;
+
+  SELECT();
+
+  if (count == 1)
+  {
+    /* WRITE_BLOCK */
+    if ((SD_SendCmd(CMD24, sector) == 0) && SD_TxDataBlock(buff, 0xFE))
+      count = 0;
+  }
+  else
+  {
+    /* WRITE_MULTIPLE_BLOCK */
+    if (CardType & CT_SD1)
+    {
+      SD_SendCmd(CMD55, 0);
+      SD_SendCmd(CMD23, count); /* ACMD23 */
+    }
+
+    if (SD_SendCmd(CMD25, sector) == 0)
+    {
+      do {
+        if(!SD_TxDataBlock(buff, 0xFC)) break;
+        buff += 512;
+      } while (--count);
+
+      /* STOP_TRAN token */
+      if(!SD_TxDataBlock(0, 0xFD))
+      {
+        count = 1;
+      }
+    }
+  }
+
+  /* Idle */
+  DESELECT();
+  SPI_RxByte();
+
+  return count ? RES_ERROR : RES_OK;
+}
+#endif /* _USE_WRITE */
+
+/* ioctl */
+DRESULT SD_disk_ioctl(BYTE drv, BYTE ctrl, void *buff)
+{
+  DRESULT res;
+  uint8_t n, csd[16], *ptr = buff;
+  WORD csize;
+
+  /* pdrv should be 0 */
+  if (drv) return RES_PARERR;
+  res = RES_ERROR;
+
+  if (ctrl == CTRL_POWER)
+  {
+    switch (*ptr)
+    {
+    case 0:
+      SD_PowerOff();    /* Power Off */
+      res = RES_OK;
+      break;
+    case 1:
+      SD_PowerOn();   /* Power On */
+      res = RES_OK;
+      break;
+    case 2:
+      *(ptr + 1) = SD_CheckPower();
+      res = RES_OK;   /* Power Check */
+      break;
+    default:
+      res = RES_PARERR;
+    }
+  }
+  else
+  {
+    /* no disk */
+    if (Stat & STA_NOINIT) return RES_NOTRDY;
+
+    SELECT();
+
+    switch (ctrl)
+    {
+    case GET_SECTOR_COUNT:
+      /* SEND_CSD */
+      if ((SD_SendCmd(CMD9, 0) == 0) && SD_RxDataBlock(csd, 16))
+      {
+        if ((csd[0] >> 6) == 1)
+        {
+          /* SDC V2 */
+          csize = csd[9] + ((WORD) csd[8] << 8) + 1;
+          *(DWORD*) buff = (DWORD) csize << 10;
+        }
+        else
+        {
+          /* MMC or SDC V1 */
+          n = (csd[5] & 15) + ((csd[10] & 128) >> 7) + ((csd[9] & 3) << 1) + 2;
+          csize = (csd[8] >> 6) + ((WORD) csd[7] << 2) + ((WORD) (csd[6] & 3) << 10) + 1;
+          *(DWORD*) buff = (DWORD) csize << (n - 9);
+        }
+        res = RES_OK;
+      }
+      break;
+    case GET_SECTOR_SIZE:
+      *(WORD*) buff = 512;
+      res = RES_OK;
+      break;
+    case CTRL_SYNC:
+      if (SD_ReadyWait() == 0xFF) res = RES_OK;
+      break;
+    case MMC_GET_CSD:
+      /* SEND_CSD */
+      if (SD_SendCmd(CMD9, 0) == 0 && SD_RxDataBlock(ptr, 16)) res = RES_OK;
+      break;
+    case MMC_GET_CID:
+      /* SEND_CID */
+      if (SD_SendCmd(CMD10, 0) == 0 && SD_RxDataBlock(ptr, 16)) res = RES_OK;
+      break;
+    case MMC_GET_OCR:
+      /* READ_OCR */
+      if (SD_SendCmd(CMD58, 0) == 0)
+      {
+        for (n = 0; n < 4; n++)
+        {
+          *ptr++ = SPI_RxByte();
+        }
+        res = RES_OK;
+      }
+    default:
+      res = RES_PARERR;
+    }
+
+    DESELECT();
+    SPI_RxByte();
+  }
+
+  return res;
+}

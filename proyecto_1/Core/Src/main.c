@@ -98,6 +98,7 @@ float32_t mg_z_values[NUM_MUESTRAS];
 float32_t fft_z[fft_points];
 float32_t magnitudes[fft_points/2 + 1]; 
 float32_t fft_in[fft_points] = {0};
+float32_t fft_in2[fft_points];
 
 
 float cached_acc_sensitivity = 0.0f; // Cache sensitivity
@@ -129,12 +130,19 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 int firststart = 1;
-int finish = 0; int startfft = 0;
+int finish = 0; int startfft = 0; int movefft = 0;
 void HAL_DMA_Callback(DMA_HandleTypeDef *hdma){
 	printf("(%.1f) DMA Callback\n",(TIM2->CNT)/80.0);
 	if(hdma -> Instance == DMA1_Channel1){
 		difftime = TIM2->CNT - time;
-		finish = 1;
+		if(movefft){
+			movefft = 0;
+			HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, fft_in, fft_in2, fft_points);
+		}
+		else{
+			finish = 1;
+		}
+
 	}
 }
 
@@ -206,17 +214,14 @@ int main(void)
 	      }
 */
 	      // Chequear si una transferencia DMA terminó (opcional si procesas en callback)
-	      if (spi_dma_transfer_complete) {
-	          spi_dma_transfer_complete = 0; // Resetear flag
+	     /* if (spi_dma_transfer_complete) {
+
 #ifdef comments
 	          printf("DMA Completado OK.\n");
 #endif
-	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
-	          HAL_Delay(1); // Delay mínimo aquí está bien
-	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
-	         //  printf("END.\n");
 
-	          HAL_TIM_Base_Start_IT(&htim5);
+
+
 	          // Procesar datos leídos que están en dma_rx_buffer
 	          //Process_FIFO_Data_DMA(last_dma_read_bytes + 1); // +1 por byte dummy
 
@@ -226,18 +231,9 @@ int main(void)
 #endif
 
 	      }
+*/
 
-	      // Chequear si hubo error DMA (opcional si manejas en callback)
-	      if (spi_dma_transfer_error) {
-	          spi_dma_transfer_error = 0; // Resetear flag
-	          printf("Error DMA detectado en main loop.\n");
-	          // Intentar resetear FIFO aquí también si no se hizo en callback
-	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
-	          HAL_Delay(1);
-	          lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
-	      }
-	    float32_t fft_in2[fft_points];
-	    memcpy(fft_in2, fft_in, sizeof(fft_in));
+
 
         if(startfft && finish){
           int STARTtiempofft = TIM2->CNT;
@@ -251,14 +247,14 @@ int main(void)
           int tiempofft =  TIM2->CNT -STARTtiempofft;
           printf("FFT tiempo: %.4f ms\n", tiempofft/80000.0);
           const char* header = "DMA x:";
-          //HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
+          HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
 
           // Enviar datos binarios
-          //HAL_UART_Transmit(&huart2, (uint8_t*)magnitudes, (fft_points/2+1) * sizeof(float32_t), HAL_MAX_DELAY);
+          HAL_UART_Transmit(&huart2, (uint8_t*)magnitudes, (fft_points/2+1) * sizeof(float32_t), HAL_MAX_DELAY);
 
           // Enviar final
           const char* footer = "END.";
-          //HAL_UART_Transmit(&huart2, (uint8_t*)footer, strlen(footer), HAL_MAX_DELAY);
+          HAL_UART_Transmit(&huart2, (uint8_t*)footer, strlen(footer), HAL_MAX_DELAY);
           //for (int k = 0; k<fft_points; k++) fft_in[k]=0;
         	startfft = 0;
         }
@@ -587,12 +583,14 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
     finish = 0;
 
     hdma_memtomem_dma1_channel1.XferCpltCallback = &HAL_DMA_Callback;
+    startfft = 1;
+    movefft = 1;
     HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_z_values, &fft_in[cantidad_sets], sets_leidos);
     cantidad_sets += sets_leidos;
     if (cantidad_sets >= 4000) {
         cantidad_sets = 0;
     }
-    startfft = 1;
+
     /*float32_t fft_in[fft_points] = {0};
     memcpy(fft_in, mg_z_values, sizeof(mg_z_values)/2);
 #ifdef comments
@@ -623,19 +621,8 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     	printf("(%.1f) SPI3 Callback\n",(TIM2->CNT)/80.0);
     	difftime = TIM2->CNT - time;
         GPIOA->BSRR = GPIO_PIN_1 ; // <<< CS ALTO aquí
-        spi_dma_transfer_complete = 1; // Poner flag de completado para main loop (o procesar aquí)
-		TIM4->CNT = 62498;
+        lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
 		HAL_TIM_Base_Start_IT(&htim4);
-		firststart = 0;
-        // --- Procesar datos directamente aquí o poner flag para main ---
-        // Procesar aquí es más rápido pero bloquea el contexto del callback
-        // Process_FIFO_Data_DMA(last_dma_read_bytes + 1); // +1 por el byte dummy inicial
-
-        // --- Resetear FIFO para reiniciar ciclo ---
-        // printf("DMA OK. Reseteando FIFO...\r\n"); // Mover prints a main si se procesa allí
-        // lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
-        // HAL_Delay(1); // CUIDADO con HAL_Delay en Callbacks! Mejor evitar.
-        // lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
     }
 }
 
@@ -649,6 +636,7 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
     	GPIOA->BSRR = GPIO_PIN_1 ; // <<< CS ALTO en error también
         printf("!!! HAL_SPI_ErrorCallback - Error Code: 0x%lX !!!\r\n", hspi->ErrorCode);
         spi_dma_transfer_error = 1; // Poner flag de error
+        lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
         spi_dma_transfer_complete = 0; // No se completó bien
 
         // Intentar resetear FIFO
@@ -690,7 +678,13 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
   if(htim->Instance == TIM4){
 	  printf("(%.1f) TIM4 Callback\n",(TIM2->CNT)/80.0);
 	  HAL_TIM_Base_Stop_IT(&htim4);
-	  Process_FIFO_Data_DMA(last_dma_read_bytes + 1); // +1 por byte dummy
+      lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
+      if(!spi_dma_transfer_error){
+		  HAL_TIM_Base_Start_IT(&htim5);
+		  Process_FIFO_Data_DMA(last_dma_read_bytes + 1); // +1 por byte dummy
+      }
+      spi_dma_transfer_error = 0;
+
   }
 }
 

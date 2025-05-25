@@ -3,20 +3,20 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
+		<item value="spi_dma_transfer_complete"/>
+		<item value="HAL_TIM_Base_Start_IT"/>
+		<item value="HAL_TIM_Base_Star_IT"/>
+		<item value="HAL_TIM_Base_Stop_IT"/>
+		<item value="finish"/>
+		<item value="Process_FIFO_Data_DMA"/>
+		<item value="DMA"/>
+		<item value="Start_FIFO_Read_DMA"/>
+		<item value="LEYENDO "/>
 		<item value="timer1"/>
 		<item value="Timer2"/>
 		<item value="SPI_RxByte"/>
 		<item value="SPI_TxBuffer"/>
 		<item value="fft_instance"/>
 		<item value="HAL_DMA_MEM2MEM_Callback"/>
-		<item value="HAL_DMA_MEM2MENM_Callback"/>
-		<item value="last_dma_read_bytes"/>
-		<item value="arm_rfft_fast_f"/>
-		<item value="arm_rfft_fast_f16"/>
-		<item value="mg_z_values"/>
-		<item value="print"/>
-		<item value="fifo_int_triggered"/>
-		<item value="write"/>
-		<item value="disk_write"/>
 	</list>
 </section>

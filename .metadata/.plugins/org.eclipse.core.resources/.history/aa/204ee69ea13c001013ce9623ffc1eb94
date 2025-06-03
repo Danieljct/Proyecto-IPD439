@@ -195,18 +195,6 @@ int main(void)
   printf("---- LSM6DSL FIFO Interrupt + DMA SPI (Accel Z @ 6.66kHz) ----\r\n");
    MEMS_Init_SPI_FIFO_Int(); // Llama a la inicialización correcta
   HAL_TIM_Base_Start_IT(&htim5);
-     if(HAL_TIM_Base_Start(&htim6) != HAL_OK)
-   {
-       printf("Error iniciando TIM6!\r\n");
-       Error_Handler();
-   }
-
-  if(HAL_DAC_Start_DMA(&hdac1, DAC_CHANNEL_1, (uint32_t*)dac_buffer, fft_points/2 + 1, DAC_ALIGN_12B_R) != HAL_OK)
-  {
-      printf("Error iniciando DAC1_CH1 DMA!\r\n");
-      Error_Handler();
-  }
-
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -578,7 +566,7 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
     hdma_memtomem_dma1_channel1.XferCpltCallback = &HAL_DMA_Callback;
     startfft = 1;
     movefft = 1;
-    HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_x_values, &fft_in[cantidad_sets], sets_leidos);
+    HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_z_values, &fft_in[cantidad_sets], sets_leidos);
     cantidad_sets += sets_leidos;
     if (cantidad_sets >= 4000) {
         cantidad_sets = 0;
@@ -656,16 +644,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
   }
 }
 
-void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* hdac)
-{
-    // Este callback se llama cuando el DMA termina de recorrer TODO el buffer
-    // (útil si NO usas modo Circular, o para sincronización)
-    // En modo circular, se llama cada vez que completa una vuelta al buffer.
-    // Podrías usarlo para cambiar de buffer (ping-pong) o ajustar algo.
-    // Ejemplo: parpadear un LED
-    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-}
-
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
   static int count = 0;
   if (htim->Instance == TIM5) {
@@ -694,29 +672,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
         int tiempofft =  TIM2->CNT -STARTtiempofft;
         printf("FFT tiempo: %.4f ms\n", tiempofft/80000.0);
         const char* header = "DMA x:";
-        //HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
+        HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
 
         // Enviar datos binarios
-        //HAL_UART_Transmit(&huart2, (uint8_t*)magnitudes, (fft_points/2+1) * sizeof(float32_t), HAL_MAX_DELAY);
+        HAL_UART_Transmit(&huart2, (uint8_t*)magnitudes, (fft_points/2+1) * sizeof(float32_t), HAL_MAX_DELAY);
 
         // Enviar final
         const char* footer = "END.";
-        //HAL_UART_Transmit(&huart2, (uint8_t*)footer, strlen(footer), HAL_MAX_DELAY);
+        HAL_UART_Transmit(&huart2, (uint8_t*)footer, strlen(footer), HAL_MAX_DELAY);
         //for (int k = 0; k<fft_points; k++) fft_in[k]=0;
-        float magintudmax;
-        for(int i = 100; i < fft_points/2 + 1; i++) {
-            if(i == 0) {
-                magintudmax = magnitudes[i];
-            }
-            else if(magnitudes[i] > magintudmax) {
-                magintudmax = magnitudes[i];
-            }
-        }
-
-        for(int i = 0; i < fft_points/2 + 1; i++) {
-            dac_buffer[i] = (uint16_t)(magnitudes[i] / magintudmax * 4095.0); // Escalar a 12 bits
-        }
-
       	startfft = 0;
       }
       else{

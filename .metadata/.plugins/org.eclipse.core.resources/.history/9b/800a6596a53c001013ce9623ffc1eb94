@@ -578,7 +578,7 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
     hdma_memtomem_dma1_channel1.XferCpltCallback = &HAL_DMA_Callback;
     startfft = 1;
     movefft = 1;
-    HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_x_values, &fft_in[cantidad_sets], sets_leidos);
+    HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_z_values, &fft_in[cantidad_sets], sets_leidos);
     cantidad_sets += sets_leidos;
     if (cantidad_sets >= 4000) {
         cantidad_sets = 0;
@@ -703,18 +703,18 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
         const char* footer = "END.";
         //HAL_UART_Transmit(&huart2, (uint8_t*)footer, strlen(footer), HAL_MAX_DELAY);
         //for (int k = 0; k<fft_points; k++) fft_in[k]=0;
-        float magintudmax;
-        for(int i = 100; i < fft_points/2 + 1; i++) {
+        int magintudmax;
+        for(int i = 0; i < fft_points/2 + 1; i++) {
             if(i == 0) {
-                magintudmax = magnitudes[i];
+                magintudmax = (int)magnitudes[i];
             }
             else if(magnitudes[i] > magintudmax) {
-                magintudmax = magnitudes[i];
+                magintudmax = (int)magnitudes[i];
             }
         }
 
         for(int i = 0; i < fft_points/2 + 1; i++) {
-            dac_buffer[i] = (uint16_t)(magnitudes[i] / magintudmax * 4095.0); // Escalar a 12 bits
+            dac_buffer[i] = (uint16_t)(magnitudes[i] / magintudmax * 4095); // Escalar a 12 bits
         }
 
       	startfft = 0;

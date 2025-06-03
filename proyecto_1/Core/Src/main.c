@@ -99,7 +99,7 @@ float32_t fft_z[fft_points];
 float32_t magnitudes[fft_points/2 + 1]; 
 float32_t fft_in[fft_points] = {0};
 float32_t fft_in2[fft_points];
-
+int counterzzz= 0;
 
 float cached_acc_sensitivity = 0.0f; // Cache sensitivity
 uint8_t fifo_chunk_buffer[READ_BUFFER_BYTES];
@@ -234,8 +234,7 @@ int main(void)
 	      }
 */
 
-
-
+	  	  counterzzz++;
 
 	      // Ceder tiempo
 	      HAL_Delay(1);
@@ -564,7 +563,7 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
     hdma_memtomem_dma1_channel1.XferCpltCallback = &HAL_DMA_Callback;
     startfft = 1;
     movefft = 1;
-    HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_z_values, &fft_in[cantidad_sets], sets_leidos);
+    HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_x_values, &fft_in[cantidad_sets], sets_leidos);
     cantidad_sets += sets_leidos;
     if (cantidad_sets >= 4000) {
         cantidad_sets = 0;
@@ -659,6 +658,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	  HAL_TIM_Base_Stop_IT(&htim4);
 
       if(startfft && finish){
+  		  printf("counterzzz: %d\n",counterzzz);
+  		  counterzzz = 0;
         int STARTtiempofft = TIM2->CNT;
         arm_rfft_fast_f32(&fft_instance,fft_in2,fft_z, 0);
         // Calcular DC y Nyquist por separado

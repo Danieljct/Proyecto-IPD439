@@ -196,7 +196,7 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 
-//	arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+	arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -264,7 +264,9 @@ int main(void)
 
       printf("---- LSM6DSL FIFO Interrupt + DMA SPI (Accel Z @ 6.66kHz) ----\r\n");
        MEMS_Init_SPI_FIFO_Int(); // Llama a la inicialización correcta
-      HAL_TIM_Base_Start_IT(&htim5);
+      HAL_Delay(100);
+       HAL_TIM_Base_Start_IT(&htim5);
+
          if(HAL_TIM_Base_Start(&htim6) != HAL_OK)
        {
            printf("Error iniciando TIM6!\r\n");

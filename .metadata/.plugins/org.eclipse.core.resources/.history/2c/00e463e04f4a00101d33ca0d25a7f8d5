@@ -1,0 +1,944 @@
+/* USER CODE BEGIN Header */
+/**
+  ******************************************************************************
+  * @file           : main.c
+  * @brief          : Main program body
+  ******************************************************************************
+  * @attention
+  *
+  * Copyright (c) 2025 STMicroelectronics.
+  * All rights reserved.
+  *
+  * This software is licensed under terms that can be found in the LICENSE file
+  * in the root directory of this software component.
+  * If no LICENSE file comes with this software, it is provided AS-IS.
+  *
+  ******************************************************************************
+  */
+/* USER CODE END Header */
+/* Includes ------------------------------------------------------------------*/
+#include "main.h"
+#include "dac.h"
+#include "dma.h"
+#include "fatfs.h"
+#include "spi.h"
+#include "tim.h"
+#include "usart.h"
+#include "gpio.h"
+
+/* Private includes ----------------------------------------------------------*/
+/* USER CODE BEGIN Includes */
+#include "lsm6dsl.h"
+#include "stm32l4xx_nucleo_bus.h"
+#include <stdio.h>
+#include "arm_math.h"
+#include <stdarg.h>
+#include <string.h>
+#include "sd_functions.h"
+/* USER CODE END Includes */
+
+/* Private typedef -----------------------------------------------------------*/
+/* USER CODE BEGIN PTD */
+// Estas definiciones DEBEN coincidir con tu configuración en CubeMX
+#define LSM6DSL_CS_GPIO_PORT     GPIOA  // Ejemplo: Puerto A
+#define LSM6DSL_CS_PIN           GPIO_PIN_15 // Ejemplo: Pin 15
+
+// --- Constantes específicas del LSM6DSL ---
+#define LSM6DSL_WHO_AM_I_REG     0x0F
+#define LSM6DSL_WHO_AM_I_VAL     0x6A // Valor esperado del registro WHO_AM_I
+/* USER CODE END PTD */
+
+/* Private define ------------------------------------------------------------*/
+/* USER CODE BEGIN PD */
+// Define max FIFO size in bytes and words
+#define FIFO_MAX_BYTES      4096
+#define FIFO_MAX_WORDS      (FIFO_MAX_BYTES / 2)
+#define ACCEL_WORDS_PER_SET 3 // Ax, Ay, Az (16 bits cada uno)
+#define ACCEL_BYTES_PER_SET (ACCEL_WORDS_PER_SET * 2)
+#define FIFO_MAX_SETS       (FIFO_MAX_WORDS / ACCEL_WORDS_PER_SET) // Max sets (~682)
+
+// --- Tamaño del buffer de lectura local ---
+// Leer chunks más pequeños puede ayudar a evitar bloqueos largos
+// Ajusta según la memoria disponible y la velocidad de procesamiento
+// Un valor entre 256 y 1024 podría ser un buen punto de partida.
+#define READ_BUFFER_BYTES   4096 // Leer hasta 512 bytes (~85 sets) a la vez
+#if (READ_BUFFER_BYTES > FIFO_MAX_BYTES)
+#error READ_BUFFER_BYTES cannot be larger than FIFO_MAX_BYTES
+#endif
+#define MAX_SETS_PER_READ   (READ_BUFFER_BYTES / ACCEL_BYTES_PER_SET)
+// --- Configuración Watermark ---
+#define FIFO_WATERMARK_WORDS 2020 // Umbral cercano al máximo (Max FTH es 2047)
+#if (FIFO_WATERMARK_WORDS > 2047)
+#error FIFO_WATERMARK_WORDS cannot exceed 2047
+#endif
+
+#define fft_points 4096
+#define NUM_MUESTRAS 682
+//#define comments
+/* USER CODE END PD */
+
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
+
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+
+/* USER CODE BEGIN PV */
+extern SPI_HandleTypeDef hspi3;
+arm_rfft_fast_instance_f32 fft_instance;
+uint8_t full_fifo_buffer[FIFO_MAX_BYTES];
+uint8_t fifo_chunk_buffer[READ_BUFFER_BYTES];
+int32_t raw_x_values[NUM_MUESTRAS]; // Sufficient size
+//int32_t raw_y_values[NUM_MUESTRAS];
+//int32_t raw_z_values[NUM_MUESTRAS];
+
+// Buffers para valores CONVERTIDOS a mg (almacenados en 32 bits)
+float32_t mg_x_values[NUM_MUESTRAS]; // Sufficient size
+//float32_t mg_y_values[NUM_MUESTRAS];
+//float32_t mg_z_values[NUM_MUESTRAS];
+
+
+float32_t fft_z[fft_points];
+float32_t magnitudes[fft_points/2 + 1];
+float32_t fft_in[fft_points] = {0};
+float32_t fft_in2[fft_points];
+int counterzzz= 0;
+uint16_t dac_buffer[fft_points/2 + 1];
+
+float cached_acc_sensitivity = 0.0f; // Cache sensitivity
+LSM6DSL_Object_t MotionSensor;
+volatile uint32_t dataRdyIntReceived;
+uint32_t time, difftime;
+uint8_t lsm6dsl_init_status_spi = 0;
+
+uint8_t fifo_was_full_last_time = 0;
+
+uint8_t dma_tx_buffer[FIFO_MAX_BYTES + 1]; // +1 para el byte de comando
+uint8_t dma_rx_buffer[FIFO_MAX_BYTES + 1]; // +1 para el byte basura recibido al inicio
+volatile uint8_t fifo_int_triggered = 0;   // Flag para la interrupción INT1
+volatile uint8_t spi_dma_transfer_complete = 0; // Flag para indicar fin de DMA
+volatile uint8_t spi_dma_transfer_error = 0;    // Flag para error DMA/SPI
+uint16_t last_dma_read_bytes = 0; // Para saber cuántos bytes procesar
+FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points);
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+/* USER CODE BEGIN PFP */
+static void MEMS_Init_SPI_FIFO_Int(void);
+static void Start_FIFO_Read_DMA(void);
+static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy);
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
+int firststart = 1;
+int finish = 0; int startfft = 0; int movefft = 0;
+void HAL_DMA_Callback(DMA_HandleTypeDef *hdma){
+	printf("(%.1f) DMA Callback\n",(TIM2->CNT)/80.0);
+	if(hdma -> Instance == DMA1_Channel1){
+		difftime = TIM2->CNT - time;
+		if(movefft){
+			movefft = 0;
+			HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, fft_in, fft_in2, fft_points);
+		}
+		else{
+			finish = 1;
+			HAL_TIM_Base_Start_IT(&htim4);
+		}
+
+	}
+}
+
+FATFS fs;  // file system
+FIL fil; // File
+FILINFO fno;
+FRESULT fresult;  // result
+UINT br, bw;  // File read/write count
+
+/**** capacity related *****/
+FATFS *pfs;
+DWORD fre_clust;
+uint32_t total, free_space;
+
+#define BUFFER_SIZE 128
+char buffer[BUFFER_SIZE];  // to store strings..
+
+int i=0;
+
+int bufsize (char *buf)
+{
+	int i=0;
+	while (*buf++ != '\0') i++;
+	return i;
+}
+
+void clear_buffer (void)
+{
+	for (int i=0; i<BUFFER_SIZE; i++) buffer[i] = '\0';
+}
+
+void send_uart (char *string)
+{
+	uint8_t len = strlen (string);
+	HAL_UART_Transmit(&huart2, (uint8_t *) string, len, HAL_MAX_DELAY);  // transmit in blocking mode
+}
+
+/* USER CODE END 0 */
+
+/**
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+
+  /* USER CODE BEGIN 1 */
+
+	arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+  /* USER CODE END 1 */
+
+  /* MCU Configuration--------------------------------------------------------*/
+
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
+
+  /* USER CODE BEGIN Init */
+
+  /* USER CODE END Init */
+
+  /* Configure the system clock */
+  SystemClock_Config();
+
+  /* USER CODE BEGIN SysInit */
+
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_DMA_Init();
+  MX_USART2_UART_Init();
+  MX_DAC1_Init();
+  MX_SPI2_Init();
+  MX_FATFS_Init();
+  MX_TIM2_Init();
+  MX_TIM5_Init();
+  MX_TIM4_Init();
+  MX_TIM6_Init();
+  /* USER CODE BEGIN 2 */
+
+ HAL_TIM_Base_Start(&htim2);
+  printf("Starting\r\n");
+
+   FATFS MiFatFs; // Objeto del sistema de archivos
+      char MiSdPath[4]; // Ruta ej: "0:/"
+
+      if (f_mount(&MiFatFs, MiSdPath, 1) == FR_OK) {
+   	   printf("SD montada. Procediendo a generar CSV...\r\n");
+
+          // Llamar a la función para generar el archivo
+          FRESULT res = generate_sine_to_csv(
+                              "0:/sin1.csv", // Nombre del archivo en la SD
+                              5.0,                // Amplitud = 5.0
+                              2.0,                // Frecuencia = 2 Hz (2 ciclos por segundo)
+                              3.0,                // Duración = 3 segundos
+                              4                 // Número de puntos = 150 (generará 150 puntos en 3 seg)
+                          );
+          if (res == FR_OK) {
+       	   printf("Archivo CSV generado con éxito.\r\n");
+
+
+          } else {
+       	   printf("Fallo al generar el archivo CSV.\r\n");
+          }
+
+
+          // Opcional: desmontar la unidad si ya no se necesita
+          f_mount(NULL, MiSdPath, 0);
+
+      } else {
+   	   printf("Error al montar la SD Card.\r\n");
+
+      }
+
+      printf("---- LSM6DSL FIFO Interrupt + DMA SPI (Accel Z @ 6.66kHz) ----\r\n");
+       MEMS_Init_SPI_FIFO_Int(); // Llama a la inicialización correcta
+      HAL_TIM_Base_Start_IT(&htim5);
+         if(HAL_TIM_Base_Start(&htim6) != HAL_OK)
+       {
+           printf("Error iniciando TIM6!\r\n");
+           Error_Handler();
+       }
+
+      if(HAL_DAC_Start_DMA(&hdac1, DAC_CHANNEL_1, (uint32_t*)dac_buffer, fft_points/2 + 1, DAC_ALIGN_12B_R) != HAL_OK)
+      {
+          printf("Error iniciando DAC1_CH1 DMA!\r\n");
+          Error_Handler();
+      }
+
+  /* USER CODE END 2 */
+
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
+  while (1)
+  {
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+	 /* if (fifo_int_triggered)
+	      {
+	          fifo_int_triggered = 0; // Resetear flag de INT1
+	          // Solo iniciar DMA si no hay otra transferencia o error pendiente
+	          if (!spi_dma_transfer_complete && !spi_dma_transfer_error) {
+	               Start_FIFO_Read_DMA(); // Iniciar lectura DMA
+	          } else {
+	               printf("WARN: Int. FIFO pero DMA aún activo o error.\n");
+	          }
+
+	      }
+*/
+	      // Chequear si una transferencia DMA terminó (opcional si procesas en callback)
+	     /* if (spi_dma_transfer_complete) {
+
+#ifdef comments
+	          printf("DMA Completado OK.\n");
+#endif
+
+
+
+	          // Procesar datos leídos que están en dma_rx_buffer
+	          //Process_FIFO_Data_DMA(last_dma_read_bytes + 1); // +1 por byte dummy
+
+	          // Resetear FIFO aquí (fuera del callback es más seguro)
+#ifdef comments
+	          printf("Reseteando FIFO post-DMA...\r\n");
+#endif
+
+	      }
+*/
+
+	  	  counterzzz++;
+
+	      // Ceder tiempo
+	      HAL_Delay(1);
+  }
+  /* USER CODE END 3 */
+}
+
+/**
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+
+  /** Configure the main internal regulator output voltage
+  */
+  if (HAL_PWREx_ControlVoltageScaling(PWR_REGULATOR_VOLTAGE_SCALE1) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes the RCC Oscillators according to the specified parameters
+  * in the RCC_OscInitTypeDef structure.
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 1;
+  RCC_OscInitStruct.PLL.PLLN = 10;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV7;
+  RCC_OscInitStruct.PLL.PLLQ = RCC_PLLQ_DIV2;
+  RCC_OscInitStruct.PLL.PLLR = RCC_PLLR_DIV2;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+
+  /** Initializes the CPU, AHB and APB buses clocks
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV1;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV1;
+
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_4) != HAL_OK)
+  {
+    Error_Handler();
+  }
+}
+
+/* USER CODE BEGIN 4 */
+
+
+
+int32_t SPI_Send(void *ignored_handle, uint8_t Reg, uint8_t *pData, uint16_t Length)
+{
+    uint16_t transfer_size = 1 + Length;
+    int32_t ret = BSP_ERROR_NONE; // 0
+    // Buffer local para la transmisión completa
+    uint8_t tx_buffer[transfer_size];
+    // Preparar comando de escritura (MSB=0 para escribir)
+    tx_buffer[0] = 0x7F & Reg; // Pone a 0 el bit 7
+    memcpy(&tx_buffer[1], pData, Length);
+
+    GPIOA->BSRR = GPIO_PIN_1 << 16; // Set pin to low
+    if (HAL_SPI_Transmit(&hspi3, tx_buffer, transfer_size, BUS_SPI3_POLL_TIMEOUT*10) != HAL_OK)
+    {
+         printf("BSP_SPI3_Send: HAL_SPI_Transmit falló!\r\n");
+         ret = BSP_ERROR_UNKNOWN_FAILURE; // O un código de error más específico
+    }
+    GPIOA->BSRR = GPIO_PIN_1; // Set pin to high
+    return ret;
+}
+
+int32_t SPI_Recv(void *handle, uint8_t reg, uint8_t *data, uint16_t len)
+{
+
+    uint16_t transfer_size = 1 + len;
+    uint8_t tx_buffer[transfer_size];
+    uint8_t rx_buffer[transfer_size];
+
+    tx_buffer[0] = 0x80 | reg;
+
+    // Rellenar resto de Tx con dummy bytes (0x00 o 0xFF)
+    for (uint16_t i = 1; i < transfer_size; i++) {
+        tx_buffer[i] = 0x00; // O 0xFF
+    }
+
+    time = TIM2->CNT;
+    GPIOA->BSRR = GPIO_PIN_1<< 16; // Set pin to low
+    HAL_StatusTypeDef status = HAL_SPI_TransmitReceive(&hspi3, tx_buffer, rx_buffer, transfer_size, HAL_MAX_DELAY); // Usa un timeout adecuado
+    GPIOA->BSRR = GPIO_PIN_1 ; // Set pin to high
+
+   difftime = TIM2->CNT - time;
+    if (status == HAL_OK) {
+        memcpy(data, &rx_buffer[1], len);
+        return 0; // Éxito (LSM6DSL_OK)
+    } else {
+        // Error en la comunicación HAL
+        printf("BSP_SPI3_Recv: HAL_SPI_TransmitReceive falló con estado: %d\r\n", status);
+        // Devolver un código de error. Podrías mapear HAL_ERROR, HAL_TIMEOUT etc. a errores específicos.
+        if (status == HAL_TIMEOUT) {
+             return -2; // Ejemplo para timeout
+        } else {
+             return -1; // Error genérico (LSM6DSL_ERROR)
+        }
+    }
+}
+
+static void MEMS_Init_SPI_FIFO_Int(void)
+{
+    LSM6DSL_IO_t io_ctx;
+    uint8_t id;
+    int32_t status;
+    lsm6dsl_int1_route_t int1_route; // Para configurar INT1
+    float sens_a;
+
+    printf("Configurando interfaz I/O SPI...\r\n");
+    // Config io_ctx (SPI_4WIRES, SPI_Send/Recv, etc.)
+    io_ctx.Init = BSP_SPI3_Init;
+    io_ctx.DeInit = BSP_SPI3_DeInit;
+    io_ctx.BusType = LSM6DSL_SPI_4WIRES_BUS;
+    io_ctx.Address = 0;
+    io_ctx.WriteReg = SPI_Send;
+    io_ctx.ReadReg = SPI_Recv;
+    io_ctx.GetTick = BSP_GetTick;
+
+    status = LSM6DSL_RegisterBusIO(&MotionSensor, &io_ctx);
+    if (status != LSM6DSL_OK) { printf("E:RegBusIO(%ld)\r\n", status); Error_Handler(); return; }
+
+    printf("Leyendo WHO_AM_I...\r\n");
+    status = LSM6DSL_ReadID(&MotionSensor, &id);
+    if (status != LSM6DSL_OK) { printf("E:ReadID(%ld)\r\n", status); Error_Handler(); return; }
+    printf("WHO_AM_I = 0x%02X\r\n", id);
+    if (id != LSM6DSL_ID) { printf("E:WrongID\r\n"); Error_Handler(); return; }
+
+    printf("LSM6DSL detectado! Inicializando...\r\n");
+    status = LSM6DSL_Init(&MotionSensor);
+    if (status != LSM6DSL_OK) { printf("E:Init(%ld)\r\n", status); Error_Handler(); return; }
+
+    // --- Configurar Sensores ---
+    printf("Configurando Accel a 6.66 kHz, Gyro OFF...\r\n");
+    status = LSM6DSL_ACC_SetOutputDataRate(&MotionSensor, 6660.0f);
+    if (status != LSM6DSL_OK) { printf("E:AccODR(%ld)\r\n", status); Error_Handler(); return; }
+    status = LSM6DSL_ACC_SetFullScale(&MotionSensor, 4);
+    if (status != LSM6DSL_OK) { printf("E:AccFS(%ld)\r\n", status); Error_Handler(); return; }
+    status = LSM6DSL_GYRO_Disable(&MotionSensor);
+    if (status != LSM6DSL_OK) { printf("E:GyroDis(%ld)\r\n", status); Error_Handler(); return; }
+    if (LSM6DSL_ACC_GetSensitivity(&MotionSensor, &cached_acc_sensitivity) != LSM6DSL_OK) {
+         printf("E:GetSens\r\n"); Error_Handler(); return;
+    }
+    printf("Sensibilidad Accel: %.3f mg/LSB\r\n", cached_acc_sensitivity);
+
+    // --- Configurar FIFO ---
+    printf("Configurando FIFO (6.66kHz, Accel Only, Stream Mode, WTM=%d, StopOnWTM=0)...\r\n", FIFO_WATERMARK_WORDS);
+    status = LSM6DSL_FIFO_Set_ODR_Value(&MotionSensor, 6660.0f);
+    if (status != LSM6DSL_OK) { printf("E:FifoODR(%ld)\r\n", status); Error_Handler(); return; }
+    status = LSM6DSL_FIFO_ACC_Set_Decimation(&MotionSensor, LSM6DSL_FIFO_XL_NO_DEC);
+    if (status != LSM6DSL_OK) { printf("E:FifoAccDec(%ld)\r\n", status); Error_Handler(); return; }
+    status = LSM6DSL_FIFO_GYRO_Set_Decimation(&MotionSensor, LSM6DSL_FIFO_GY_DISABLE);
+    if (status != LSM6DSL_OK) { printf("E:FifoGyroDec(%ld)\r\n", status); Error_Handler(); return; }
+
+    // Configurar Nivel de Watermark
+    status = LSM6DSL_FIFO_Set_Watermark_Level(&MotionSensor, FIFO_WATERMARK_WORDS);
+    if (status != LSM6DSL_OK) { printf("E:SetWTM(%ld)\r\n", status); Error_Handler(); return; }
+
+    // Asegurarse que "Stop on Watermark" está DESACTIVADO (para modo Stream real)
+    status = lsm6dsl_fifo_stop_on_wtm_set(&(MotionSensor.Ctx), 0); // 0 = Disabled
+     if (status != LSM6DSL_OK) { printf("E:StopOnWTM(%ld)\r\n", status); Error_Handler(); return; }
+
+    // --- Configurar Interrupción INT1 para Watermark ---
+    // Asegúrate que el pin EXTI (LSM6DSL_INT1_PIN) está configurado en CubeMX
+    printf("Configurando INT1 para FIFO Watermark...\r\n");
+    status = lsm6dsl_pin_int1_route_get(&(MotionSensor.Ctx), &int1_route);
+     if (status != LSM6DSL_OK) { printf("E:GetInt1Route(%ld)\r\n", status); Error_Handler(); return; }
+    // Habilitar SOLO la interrupción de watermark en INT1
+    int1_route.int1_fth = 1;
+    int1_route.int1_fifo_ovr = 0; // Deshabilitar OVF en INT1 (lo chequeamos por status)
+    int1_route.int1_full_flag = 0;
+    int1_route.int1_drdy_xl = 0; // Deshabilitar DRDY si no se usa
+    //... deshabilita otras fuentes si es necesario ...
+    status = lsm6dsl_pin_int1_route_set(&(MotionSensor.Ctx), int1_route);
+    if (status != LSM6DSL_OK) { printf("E:SetInt1Route(%ld)\r\n", status); Error_Handler(); return; }
+    // Puedes configurar Latch/Pulse, Active High/Low aquí si es necesario
+    // lsm6dsl_int_notification_set(...)
+    // lsm6dsl_pin_polarity_set(...)
+
+    // --- Iniciar operación ---
+    // Poner en modo Stream (esto también debería limpiar la FIFO)
+    status = LSM6DSL_FIFO_Set_Mode(&MotionSensor, LSM6DSL_STREAM_MODE);
+    if (status != LSM6DSL_OK) { printf("E:FifoSetMode(%ld)\r\n", status); Error_Handler(); return; }
+
+    printf("Activando Acelerómetro...\r\n");
+    status = LSM6DSL_ACC_Enable(&MotionSensor);
+    if (status != LSM6DSL_OK) { printf("E:AccEnable(%ld)\r\n", status); Error_Handler(); return; }
+
+    printf("LSM6DSL configurado para Int. Watermark (%d words) a 6.66kHz (Solo Accel, Stream Mode).\r\n", FIFO_WATERMARK_WORDS);
+    printf("Esperando interrupciones en pin %d...\n", LSM6DSL_INT1_PIN);
+
+    lsm6dsl_init_status_spi = 1;
+    fifo_int_triggered = 0; // Asegurar flag limpio
+    spi_dma_transfer_complete = 0; // Asegurar flags limpios
+    spi_dma_transfer_error = 0;
+}
+
+/**
+  * @brief Inicia la lectura de la FIFO usando DMA. Llamada desde main loop.
+  */
+
+uint16_t num_words_available = 0;
+uint16_t bytes_to_read = 0;
+int32_t status;
+static void Start_FIFO_Read_DMA(void)
+{
+    if (!lsm6dsl_init_status_spi) return;
+
+    num_words_available = 0;
+    bytes_to_read = 0;
+
+    // Leer nivel FIFO
+    status = LSM6DSL_FIFO_Get_Num_Samples(&MotionSensor, &num_words_available);
+    //if (status != LSM6DSL_OK) { printf("E:StartRead_GetSamples(%ld)\r\n", status); return; }
+
+    // Determinar cuántos bytes leer (no exceder buffer ni FIFO max)
+    bytes_to_read = num_words_available * 2;
+    if (bytes_to_read == 0) return; // Nada que leer
+    if (bytes_to_read > FIFO_MAX_BYTES) {
+        printf("WARN: FIFO level %u > Buffer! Clipping to %d bytes.\r\n", bytes_to_read, FIFO_MAX_BYTES);
+        bytes_to_read = FIFO_MAX_BYTES;
+    }
+
+    printf("INT DMA! Leyendo %u palabras (%u bytes)...\r\n", num_words_available, bytes_to_read);
+    last_dma_read_bytes = bytes_to_read; // Guardar para el callback
+
+    // Buffer TX: Comando de lectura + Dummies
+    dma_tx_buffer[0] = LSM6DSL_FIFO_DATA_OUT_L | 0x80; // Comando Leer desde FIFO_DATA_OUT_L
+    memset(&dma_tx_buffer[1], 0x00, bytes_to_read); // Dummies
+
+    spi_dma_transfer_complete = 0; // Marcar como no completa
+    spi_dma_transfer_error = 0;    // Limpiar flag de error
+
+    time = TIM2->CNT;
+
+    GPIOA->BSRR = GPIO_PIN_1<< 16;
+    HAL_StatusTypeDef dma_status = HAL_SPI_TransmitReceive_DMA(&hspi3,
+                                                               dma_tx_buffer,
+                                                               dma_rx_buffer, // Leer en buffer DMA RX
+                                                               bytes_to_read + 1); // Tamaño total = Comando + Datos
+
+    difftime = TIM2->CNT - time;
+
+    if (dma_status != HAL_OK) {
+        GPIOA->BSRR = GPIO_PIN_1 ; // CS Alto en error
+        printf("E:HAL_SPI_TransmitReceive_DMA (%d)\r\n", dma_status);
+        spi_dma_transfer_error = 1; // Marcar error
+        // Resetear FIFO?
+        lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE); HAL_Delay(1);
+        lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
+    } else {
+        // DMA iniciado correctamente
+    	time = TIM2->CNT;
+        uint32_t time_us = difftime / 80;
+#ifdef comments
+        printf("DMA iniciado (%lu ticks = ~%lu us)\r\n", difftime, time_us);
+#endif
+        // El CS se pondrá en ALTO en el callback de completado o error
+    }
+   // HAL_TIM_Base_Start_IT(&htim5);
+}
+
+const int INITIAL_BUFFER_OFFSET = 1;
+/**
+  * @brief Procesa los datos recibidos vía DMA desde la FIFO (solo eje Z).
+  */
+static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
+{
+    uint32_t time_us = difftime / 80;
+#ifdef comments
+    printf("DMA Completado en (%lu ticks = ~%lu us)\r\n", difftime, time_us);
+#endif
+
+    if (cached_acc_sensitivity == 0.0f || bytes_received_incl_dummy <= 1) return;
+
+    uint16_t bytes_accel_data = bytes_received_incl_dummy - 1; // Datos reales (sin el primer byte basura)
+    uint16_t sets_leidos = bytes_accel_data / ACCEL_BYTES_PER_SET;
+    uint8_t* data_start_ptr = dma_rx_buffer + INITIAL_BUFFER_OFFSET;
+#ifdef comments
+    printf("--- Procesando %u sets DMA ---\r\n", sets_leidos);
+#endif
+    for (int i = 0; i < sets_leidos; i++) {
+            // Calculate the pointer to the start of the current sample's 6 bytes
+            uint8_t* pSampleBytes = data_start_ptr + (i * ACCEL_BYTES_PER_SET);
+
+            // --- Extract Raw 16-bit Values and Store in 32-bit Buffers ---
+            // X (LSB in pSampleBytes[0], MSB in pSampleBytes[1])
+            raw_x_values[i] = (int16_t)(((uint16_t)pSampleBytes[1] << 8) | pSampleBytes[0]);
+
+            // Y (LSB in pSampleBytes[2], MSB in pSampleBytes[3])
+            //raw_y_values[i] = (int16_t)(((uint16_t)pSampleBytes[3] << 8) | pSampleBytes[2]);
+
+            // Z (LSB in pSampleBytes[4], MSB in pSampleBytes[5])
+            //raw_z_values[i] = (int16_t)(((uint16_t)pSampleBytes[5] << 8) | pSampleBytes[4]);
+
+            // --- Convert Raw Values to mg and Store in 32-bit Buffers ---
+            mg_x_values[i] = (float32_t)((float)raw_x_values[i] * cached_acc_sensitivity);
+         //   mg_y_values[i] = (float32_t)((float)raw_y_values[i] * cached_acc_sensitivity);
+         //   mg_z_values[i] = (float32_t)((float)raw_z_values[i] * cached_acc_sensitivity);
+
+
+            // --- Optional: Print for first/last few samples (like in user's snippet) ---
+          //  if (i < 5 || i >= (sets_leidos - 5)) {
+          //      printf(" Set[%3u]: Ax = %f mg, Ay = %5f mg, Az = %5f mg\r\n",
+          //             i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
+          //  }
+
+        }
+    static int cantidad_sets = 0;
+    finish = 0;
+
+    hdma_memtomem_dma1_channel1.XferCpltCallback = &HAL_DMA_Callback;
+    startfft = 1;
+    movefft = 1;
+    HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_x_values, &fft_in[cantidad_sets], sets_leidos);
+    cantidad_sets += sets_leidos;
+    if (cantidad_sets >= 4000) {
+        cantidad_sets = 0;
+    }
+
+    /*float32_t fft_in[fft_points] = {0};
+    memcpy(fft_in, mg_z_values, sizeof(mg_z_values)/2);
+#ifdef comments
+    printf("--- Fin Procesamiento DMA ---\r\n");
+#endif
+    arm_rfft_fast_f32(&fft_instance,fft_in,fft_z, 0);
+    // Calcular DC y Nyquist por separado
+    magnitudes[0] = fabsf(fft_z[0]);
+    #if (fft_points % 2 == 0) // Si N es par, hay componente Nyquist
+    	magnitudes[fft_points/2] = fabsf(fft_z[1]);
+    #endif
+    arm_cmplx_mag_f32(&fft_z[2], &magnitudes[1], (fft_points - 2) / 2);
+
+    printf("DMA x:");
+    for (int i = 0; i < fft_points/2+1; i++) {
+        printf("%.0f ", magnitudes[i]);
+    }*/
+
+
+
+}
+extern uint8_t spiDmaTransferComplete;
+/*
+void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
+{
+    if(hspi->Instance == SPI3) // Verificar que es la interrupción de SPI3
+    {
+    	printf("(%.1f) SPI3 Callback\n",(TIM2->CNT)/80.0);
+    	difftime = TIM2->CNT - time;
+        GPIOA->BSRR = GPIO_PIN_1 ; // <<< CS ALTO aquí
+        lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
+		HAL_TIM_Base_Start_IT(&htim4);
+    }
+    if (hspi->Instance == SPI2){
+    	spiDmaTransferComplete = 1;
+    }
+}
+*/
+/**
+  * @brief Callback de error SPI (usado por DMA y otros modos).
+  */
+void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
+{
+     if(hspi->Instance == SPI3)
+     {
+    	GPIOA->BSRR = GPIO_PIN_1 ; // <<< CS ALTO en error también
+        printf("!!! HAL_SPI_ErrorCallback - Error Code: 0x%lX !!!\r\n", hspi->ErrorCode);
+        spi_dma_transfer_error = 1; // Poner flag de error
+        lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
+        spi_dma_transfer_complete = 0; // No se completó bien
+
+        // Intentar resetear FIFO
+        // lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
+        // HAL_Delay(1); // CUIDADO
+        // lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
+
+        // Podrías querer llamar a Error_Handler() o intentar recuperar
+     }
+}
+
+
+/**
+  * @brief EXTI Line Detection Callback.
+  * @param GPIO_Pin Specifies the port pin connected to corresponding EXTI line.
+  * @retval None
+  */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+  // Asegúrate que el pin coincide con el conectado a INT1 del sensor
+  if (GPIO_Pin == GPIO_PIN_0) {
+    //fifo_int_triggered = 1; // Poner el flag para el bucle principal
+    // NO hacer lecturas SPI/I2C aquí dentro de la interrupción.
+  }
+}
+
+void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* hdac)
+{
+    // Este callback se llama cuando el DMA termina de recorrer TODO el buffer
+    // (útil si NO usas modo Circular, o para sincronización)
+    // En modo circular, se llama cada vez que completa una vuelta al buffer.
+    // Podrías usarlo para cambiar de buffer (ping-pong) o ajustar algo.
+    // Ejemplo: parpadear un LED
+    HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
+  static int count = 0;
+  if (htim->Instance == TIM5) {
+	  printf("(%.1f) TIM5 Callback\n",(TIM2->CNT)/80.0);
+#ifdef comments
+	  printf("TIM5 Periodo: %.1f us\r\n", (TIM2->CNT-count)/80.0f);
+#endif
+   // fifo_int_triggered = 1; // Poner el flag para el bucle principal
+    HAL_TIM_Base_Stop_IT(&htim5); // Detener el timer
+    Start_FIFO_Read_DMA();
+    count = TIM2->CNT;
+  }
+  if(htim->Instance == TIM4){
+	  printf("(%.1f) TIM4 Callback\n",(TIM2->CNT)/80.0);
+	  HAL_TIM_Base_Stop_IT(&htim4);
+
+      if(startfft && finish){
+  		  printf("counterzzz: %d\n",counterzzz);
+  		  counterzzz = 0;
+        int STARTtiempofft = TIM2->CNT;
+        arm_rfft_fast_f32(&fft_instance,fft_in2,fft_z, 0);
+        // Calcular DC y Nyquist por separado
+        magnitudes[0] = fabsf(fft_z[0]);
+        #if (fft_points % 2 == 0) // Si N es par, hay componente Nyquist
+          magnitudes[fft_points/2] = fabsf(fft_z[1]);
+        #endif
+        arm_cmplx_mag_f32(&fft_z[2], &magnitudes[1], (fft_points - 2) / 2);
+        int tiempofft =  TIM2->CNT -STARTtiempofft;
+        printf("FFT tiempo: %.4f ms\n", tiempofft/80000.0);
+        const char* header = "DMA x:";
+        HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
+
+        // Enviar datos binarios
+        HAL_UART_Transmit(&huart2, (uint8_t*)magnitudes, (fft_points/2+1) * sizeof(float32_t), HAL_MAX_DELAY);
+
+        // Enviar final
+        const char* footer = "END.";
+        HAL_UART_Transmit(&huart2, (uint8_t*)footer, strlen(footer), HAL_MAX_DELAY);
+        //for (int k = 0; k<fft_points; k++) fft_in[k]=0;
+        float magintudmax;
+        for(int i = 100; i < fft_points/2 + 1; i++) {
+            if(i == 0) {
+                magintudmax = magnitudes[i];
+            }
+            else if(magnitudes[i] > magintudmax) {
+                magintudmax = magnitudes[i];
+            }
+        }
+
+        for(int i = 0; i < fft_points/2 + 1; i++) {
+            dac_buffer[i] = (uint16_t)(magnitudes[i] / magintudmax * 4095.0); // Escalar a 12 bits
+        }
+
+      	startfft = 0;
+      }
+      else{
+		  lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
+		  if(!spi_dma_transfer_error){
+			  HAL_TIM_Base_Start_IT(&htim5);
+			  Process_FIFO_Data_DMA(last_dma_read_bytes + 1); // +1 por byte dummy
+		  }
+		  spi_dma_transfer_error = 0;
+
+      }
+
+  }
+}
+
+int _write(int fd, char * ptr, int len)
+{
+  HAL_UART_Transmit(&huart2, (uint8_t *) ptr, len, HAL_MAX_DELAY);
+  return len;
+}
+
+#if 1
+#define MAX_POINTS_BUFFER_SIZE (4 * 16) // Aproximadamente 65KB
+
+FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points) {
+    FIL fil;         // Objeto de archivo FatFs
+    FRESULT fr;      // Variable para códigos de retorno de FatFs
+    UINT bytes_written; // Variable para almacenar bytes escritos por f_write
+
+    // --- Buffer estático para todos los puntos ---
+    // ¡Precaución! Un buffer de este tamaño (aprox. 65KB) puede ser grande para la RAM de algunos microcontroladores.
+    // Asegúrate de que tu sistema tiene suficiente memoria.
+    static char all_points_buffer[MAX_POINTS_BUFFER_SIZE];
+    all_points_buffer[0] = '\0'; // Inicializar el buffer como una cadena vacía
+
+    // --- 1. Abrir/Crear el archivo en modo escritura (FA_WRITE) ---
+    // FA_CREATE_ALWAYS: Crea un archivo nuevo. Si ya existe, lo sobrescribe.
+    fr = f_open(&fil, filename, FA_CREATE_ALWAYS | FA_WRITE);
+    if (fr != FR_OK) {
+        printf("Error: No se pudo abrir/crear el archivo '%s'. Codigo FatFs: %d\r\n", filename, fr);
+        return fr;
+    }
+
+    // --- 2. Generar puntos y acumular en el buffer ---
+    printf("Generando %d puntos sinusoidales en el buffer...\r\n", num_points);
+    char temp_point_buffer[30]; // Buffer temporal para cada punto individual
+
+    // Verificar si el número de puntos excede la capacidad del buffer
+    if (num_points > 4096) {
+        printf("Error: El número de puntos (%d) excede el máximo soportado por el buffer estático (4096).\r\n", num_points);
+        f_close(&fil);
+        return FR_INVALID_PARAMETER; // O un código de error apropiado
+    }
+    difftime = TIM2->CNT - time;
+    for (int i = 0; i < num_points; ++i) {
+        double t = (double)i * duration / (double)(num_points > 1 ? num_points - 1 : 1);
+        double value = amplitude * sin(2.0 * M_PI * frequency * t);
+
+        // Formatear el valor y agregarlo al buffer temporal
+        int len = snprintf(temp_point_buffer, sizeof(temp_point_buffer), "%.4f", value);
+
+        // Verificar si snprintf truncó la salida
+        if (len < 0 || len >= sizeof(temp_point_buffer)) {
+            printf("Advertencia: Buffer temporal insuficiente al formatear punto %d.\r\n", i);
+            // Esto podría indicar que tu valor flotante es demasiado grande para el formato "%.4f"
+        }
+
+        // Concatenar el valor al buffer principal
+        // Asegurarse de que hay espacio suficiente en all_points_buffer ANTES de concatenar
+        if (strlen(all_points_buffer) + strlen(temp_point_buffer) + (i < num_points - 1 ? 1 : 0) + 2 >= MAX_POINTS_BUFFER_SIZE) {
+            printf("Error: Buffer principal insuficiente para todos los puntos. Reduce num_points o aumenta MAX_POINTS_BUFFER_SIZE.\r\n");
+            f_close(&fil);
+            return FR_DISK_ERR; // O un error más específico
+        }
+        strcat(all_points_buffer, temp_point_buffer);
+
+        // Añadir la coma si no es el último punto
+        if (i < num_points - 1) {
+            strcat(all_points_buffer, ",");
+        }
+    }
+    // Añadir un salto de línea al final de la fila de puntos
+    strcat(all_points_buffer, "\n");
+
+    // --- 3. Escribir el buffer completo en el archivo ---
+    printf("Escribiendo todos los puntos en el archivo...\r\n");
+
+    time = TIM2->CNT;
+    fr = f_write(&fil, all_points_buffer, strlen(all_points_buffer), &bytes_written);
+
+    printf("Tiempo de ejecución: %f s\r\n", difftime/80000000.0);
+
+    if (fr != FR_OK || bytes_written < strlen(all_points_buffer)) {
+        printf("Error: No se pudieron escribir todos los puntos en '%s'. Codigo FatFs: %d\r\n", filename, fr);
+        f_close(&fil);
+        return fr;
+    }
+
+    // --- 4. Escribir la segunda línea en el mismo archivo ---
+    char second_line_data[] = "Datos adicionales del experimento.\n";
+    fr = f_write(&fil, second_line_data, strlen(second_line_data), &bytes_written);
+    if (fr != FR_OK || bytes_written < strlen(second_line_data)) {
+        printf("Error: No se pudo escribir la segunda línea en '%s'. Codigo FatFs: %d\r\n", filename, fr);
+        f_close(&fil);
+        return fr;
+    }
+
+    // --- 5. Cerrar el archivo ---
+    fr = f_close(&fil);
+    if (fr != FR_OK) {
+        printf("Error: No se pudo cerrar el archivo '%s'. Codigo FatFs: %d\r\r\n", filename, fr);
+        return fr;
+    }
+
+    printf("Datos sinusoidales (fila única) y línea adicional guardados exitosamente en '%s'\r\n", filename);
+    return FR_OK; // Indicar éxito
+}
+#endif
+/* USER CODE END 4 */
+
+/**
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
+  /* User can add his own implementation to report the HAL error return state */
+  __disable_irq();
+  while (1)
+  {
+  }
+  /* USER CODE END Error_Handler_Debug */
+}
+
+#ifdef  USE_FULL_ASSERT
+/**
+  * @brief  Reports the name of the source file and the source line number
+  *         where the assert_param error has occurred.
+  * @param  file: pointer to the source file name
+  * @param  line: assert_param error line source number
+  * @retval None
+  */
+void assert_failed(uint8_t *file, uint32_t line)
+{
+  /* USER CODE BEGIN 6 */
+  /* User can add his own implementation to report the file name and line number,
+     ex: printf("Wrong parameters value: file %s on line %d\r\n", file, line) */
+  /* USER CODE END 6 */
+}
+#endif /* USE_FULL_ASSERT */

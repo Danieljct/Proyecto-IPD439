@@ -32,6 +32,9 @@
 #include "stm32l4xx_nucleo_bus.h"
 #include <stdio.h>
 #include "arm_math.h"
+#include <stdarg.h>
+#include <string.h>
+#include "sd_functions.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -84,32 +87,31 @@
 /* USER CODE BEGIN PV */
 extern SPI_HandleTypeDef hspi3;
 arm_rfft_fast_instance_f32 fft_instance;
-
+uint8_t full_fifo_buffer[FIFO_MAX_BYTES];
+uint8_t fifo_chunk_buffer[READ_BUFFER_BYTES];
 int32_t raw_x_values[NUM_MUESTRAS]; // Sufficient size
-int32_t raw_y_values[NUM_MUESTRAS];
-int32_t raw_z_values[NUM_MUESTRAS];
+//int32_t raw_y_values[NUM_MUESTRAS];
+//int32_t raw_z_values[NUM_MUESTRAS];
 
 // Buffers para valores CONVERTIDOS a mg (almacenados en 32 bits)
 float32_t mg_x_values[NUM_MUESTRAS]; // Sufficient size
-float32_t mg_y_values[NUM_MUESTRAS];
-float32_t mg_z_values[NUM_MUESTRAS];
+//float32_t mg_y_values[NUM_MUESTRAS];
+//float32_t mg_z_values[NUM_MUESTRAS];
 
 
 float32_t fft_z[fft_points];
-float32_t magnitudes[fft_points/2 + 1]; 
+float32_t magnitudes[fft_points/2 + 1];
 float32_t fft_in[fft_points] = {0};
 float32_t fft_in2[fft_points];
 int counterzzz= 0;
 uint16_t dac_buffer[fft_points/2 + 1];
 
 float cached_acc_sensitivity = 0.0f; // Cache sensitivity
-uint8_t fifo_chunk_buffer[READ_BUFFER_BYTES];
 LSM6DSL_Object_t MotionSensor;
 volatile uint32_t dataRdyIntReceived;
 uint32_t time, difftime;
 uint8_t lsm6dsl_init_status_spi = 0;
 
-uint8_t full_fifo_buffer[FIFO_MAX_BYTES];
 uint8_t fifo_was_full_last_time = 0;
 
 uint8_t dma_tx_buffer[FIFO_MAX_BYTES + 1]; // +1 para el byte de comando
@@ -118,6 +120,7 @@ volatile uint8_t fifo_int_triggered = 0;   // Flag para la interrupción INT1
 volatile uint8_t spi_dma_transfer_complete = 0; // Flag para indicar fin de DMA
 volatile uint8_t spi_dma_transfer_error = 0;    // Flag para error DMA/SPI
 uint16_t last_dma_read_bytes = 0; // Para saber cuántos bytes procesar
+FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points);
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -148,6 +151,40 @@ void HAL_DMA_Callback(DMA_HandleTypeDef *hdma){
 	}
 }
 
+FATFS fs;  // file system
+FIL fil; // File
+FILINFO fno;
+FRESULT fresult;  // result
+UINT br, bw;  // File read/write count
+
+/**** capacity related *****/
+FATFS *pfs;
+DWORD fre_clust;
+uint32_t total, free_space;
+
+#define BUFFER_SIZE 128
+char buffer[BUFFER_SIZE];  // to store strings..
+
+int i=0;
+
+int bufsize (char *buf)
+{
+	int i=0;
+	while (*buf++ != '\0') i++;
+	return i;
+}
+
+void clear_buffer (void)
+{
+	for (int i=0; i<BUFFER_SIZE; i++) buffer[i] = '\0';
+}
+
+void send_uart (char *string)
+{
+	uint8_t len = strlen (string);
+	HAL_UART_Transmit(&huart2, (uint8_t *) string, len, HAL_MAX_DELAY);  // transmit in blocking mode
+}
+
 /* USER CODE END 0 */
 
 /**
@@ -159,7 +196,7 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 
-	arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+//	arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -191,21 +228,54 @@ int main(void)
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
-  HAL_TIM_Base_Start(&htim2);
-  printf("---- LSM6DSL FIFO Interrupt + DMA SPI (Accel Z @ 6.66kHz) ----\r\n");
-   MEMS_Init_SPI_FIFO_Int(); // Llama a la inicialización correcta
-  HAL_TIM_Base_Start_IT(&htim5);
-     if(HAL_TIM_Base_Start(&htim6) != HAL_OK)
-   {
-       printf("Error iniciando TIM6!\r\n");
-       Error_Handler();
-   }
+ HAL_TIM_Base_Start(&htim2);
+  printf("Starting\r\n");
 
-  if(HAL_DAC_Start_DMA(&hdac1, DAC_CHANNEL_1, (uint32_t*)dac_buffer, fft_points/2 + 1, DAC_ALIGN_12B_R) != HAL_OK)
-  {
-      printf("Error iniciando DAC1_CH1 DMA!\r\n");
-      Error_Handler();
-  }
+   FATFS MiFatFs; // Objeto del sistema de archivos
+      char MiSdPath[4]; // Ruta ej: "0:/"
+
+      if (f_mount(&MiFatFs, MiSdPath, 1) == FR_OK) {
+   	   printf("SD montada. Procediendo a generar CSV...\r\n");
+
+          // Llamar a la función para generar el archivo
+          FRESULT res = generate_sine_to_csv(
+                              "0:/sin1.csv", // Nombre del archivo en la SD
+                              5.0,                // Amplitud = 5.0
+                              2.0,                // Frecuencia = 2 Hz (2 ciclos por segundo)
+                              3.0,                // Duración = 3 segundos
+                              4                 // Número de puntos = 150 (generará 150 puntos en 3 seg)
+                          );
+          if (res == FR_OK) {
+       	   printf("Archivo CSV generado con éxito.\r\n");
+
+
+          } else {
+       	   printf("Fallo al generar el archivo CSV.\r\n");
+          }
+
+
+          // Opcional: desmontar la unidad si ya no se necesita
+          f_mount(NULL, MiSdPath, 0);
+
+      } else {
+   	   printf("Error al montar la SD Card.\r\n");
+
+      }
+
+      printf("---- LSM6DSL FIFO Interrupt + DMA SPI (Accel Z @ 6.66kHz) ----\r\n");
+       MEMS_Init_SPI_FIFO_Int(); // Llama a la inicialización correcta
+      HAL_TIM_Base_Start_IT(&htim5);
+         if(HAL_TIM_Base_Start(&htim6) != HAL_OK)
+       {
+           printf("Error iniciando TIM6!\r\n");
+           Error_Handler();
+       }
+
+      if(HAL_DAC_Start_DMA(&hdac1, DAC_CHANNEL_1, (uint32_t*)dac_buffer, fft_points/2 + 1, DAC_ALIGN_12B_R) != HAL_OK)
+      {
+          printf("Error iniciando DAC1_CH1 DMA!\r\n");
+          Error_Handler();
+      }
 
   /* USER CODE END 2 */
 
@@ -553,15 +623,15 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
             raw_x_values[i] = (int16_t)(((uint16_t)pSampleBytes[1] << 8) | pSampleBytes[0]);
 
             // Y (LSB in pSampleBytes[2], MSB in pSampleBytes[3])
-            raw_y_values[i] = (int16_t)(((uint16_t)pSampleBytes[3] << 8) | pSampleBytes[2]);
+            //raw_y_values[i] = (int16_t)(((uint16_t)pSampleBytes[3] << 8) | pSampleBytes[2]);
 
             // Z (LSB in pSampleBytes[4], MSB in pSampleBytes[5])
-            raw_z_values[i] = (int16_t)(((uint16_t)pSampleBytes[5] << 8) | pSampleBytes[4]);
+            //raw_z_values[i] = (int16_t)(((uint16_t)pSampleBytes[5] << 8) | pSampleBytes[4]);
 
             // --- Convert Raw Values to mg and Store in 32-bit Buffers ---
             mg_x_values[i] = (float32_t)((float)raw_x_values[i] * cached_acc_sensitivity);
-            mg_y_values[i] = (float32_t)((float)raw_y_values[i] * cached_acc_sensitivity);
-            mg_z_values[i] = (float32_t)((float)raw_z_values[i] * cached_acc_sensitivity);
+         //   mg_y_values[i] = (float32_t)((float)raw_y_values[i] * cached_acc_sensitivity);
+         //   mg_z_values[i] = (float32_t)((float)raw_z_values[i] * cached_acc_sensitivity);
 
 
             // --- Optional: Print for first/last few samples (like in user's snippet) ---
@@ -604,7 +674,7 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
 
 
 }
-
+extern uint8_t spiDmaTransferComplete;
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
 {
@@ -615,6 +685,9 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
         GPIOA->BSRR = GPIO_PIN_1 ; // <<< CS ALTO aquí
         lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
 		HAL_TIM_Base_Start_IT(&htim4);
+    }
+    if (hspi->Instance == SPI2){
+    	spiDmaTransferComplete = 1;
     }
 }
 
@@ -695,14 +768,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
         int tiempofft =  TIM2->CNT -STARTtiempofft;
         printf("FFT tiempo: %.4f ms\n", tiempofft/80000.0);
         const char* header = "DMA x:";
-        //HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
+        HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
 
         // Enviar datos binarios
-        //HAL_UART_Transmit(&huart2, (uint8_t*)magnitudes, (fft_points/2+1) * sizeof(float32_t), HAL_MAX_DELAY);
+        HAL_UART_Transmit(&huart2, (uint8_t*)magnitudes, (fft_points/2+1) * sizeof(float32_t), HAL_MAX_DELAY);
 
         // Enviar final
         const char* footer = "END.";
-        //HAL_UART_Transmit(&huart2, (uint8_t*)footer, strlen(footer), HAL_MAX_DELAY);
+        HAL_UART_Transmit(&huart2, (uint8_t*)footer, strlen(footer), HAL_MAX_DELAY);
         //for (int k = 0; k<fft_points; k++) fft_in[k]=0;
         float magintudmax;
         for(int i = 100; i < fft_points/2 + 1; i++) {
@@ -738,6 +811,104 @@ int _write(int fd, char * ptr, int len)
   HAL_UART_Transmit(&huart2, (uint8_t *) ptr, len, HAL_MAX_DELAY);
   return len;
 }
+
+#if 1
+#define MAX_POINTS_BUFFER_SIZE (4 * 16) // Aproximadamente 65KB
+
+FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points) {
+    FIL fil;         // Objeto de archivo FatFs
+    FRESULT fr;      // Variable para códigos de retorno de FatFs
+    UINT bytes_written; // Variable para almacenar bytes escritos por f_write
+
+    // --- Buffer estático para todos los puntos ---
+    // ¡Precaución! Un buffer de este tamaño (aprox. 65KB) puede ser grande para la RAM de algunos microcontroladores.
+    // Asegúrate de que tu sistema tiene suficiente memoria.
+    static char all_points_buffer[MAX_POINTS_BUFFER_SIZE];
+    all_points_buffer[0] = '\0'; // Inicializar el buffer como una cadena vacía
+
+    // --- 1. Abrir/Crear el archivo en modo escritura (FA_WRITE) ---
+    // FA_CREATE_ALWAYS: Crea un archivo nuevo. Si ya existe, lo sobrescribe.
+    fr = f_open(&fil, filename, FA_CREATE_ALWAYS | FA_WRITE);
+    if (fr != FR_OK) {
+        printf("Error: No se pudo abrir/crear el archivo '%s'. Codigo FatFs: %d\r\n", filename, fr);
+        return fr;
+    }
+
+    // --- 2. Generar puntos y acumular en el buffer ---
+    printf("Generando %d puntos sinusoidales en el buffer...\r\n", num_points);
+    char temp_point_buffer[30]; // Buffer temporal para cada punto individual
+
+    // Verificar si el número de puntos excede la capacidad del buffer
+    if (num_points > 4096) {
+        printf("Error: El número de puntos (%d) excede el máximo soportado por el buffer estático (4096).\r\n", num_points);
+        f_close(&fil);
+        return FR_INVALID_PARAMETER; // O un código de error apropiado
+    }
+    difftime = TIM2->CNT - time;
+    for (int i = 0; i < num_points; ++i) {
+        double t = (double)i * duration / (double)(num_points > 1 ? num_points - 1 : 1);
+        double value = amplitude * sin(2.0 * M_PI * frequency * t);
+
+        // Formatear el valor y agregarlo al buffer temporal
+        int len = snprintf(temp_point_buffer, sizeof(temp_point_buffer), "%.4f", value);
+
+        // Verificar si snprintf truncó la salida
+        if (len < 0 || len >= sizeof(temp_point_buffer)) {
+            printf("Advertencia: Buffer temporal insuficiente al formatear punto %d.\r\n", i);
+            // Esto podría indicar que tu valor flotante es demasiado grande para el formato "%.4f"
+        }
+
+        // Concatenar el valor al buffer principal
+        // Asegurarse de que hay espacio suficiente en all_points_buffer ANTES de concatenar
+        if (strlen(all_points_buffer) + strlen(temp_point_buffer) + (i < num_points - 1 ? 1 : 0) + 2 >= MAX_POINTS_BUFFER_SIZE) {
+            printf("Error: Buffer principal insuficiente para todos los puntos. Reduce num_points o aumenta MAX_POINTS_BUFFER_SIZE.\r\n");
+            f_close(&fil);
+            return FR_DISK_ERR; // O un error más específico
+        }
+        strcat(all_points_buffer, temp_point_buffer);
+
+        // Añadir la coma si no es el último punto
+        if (i < num_points - 1) {
+            strcat(all_points_buffer, ",");
+        }
+    }
+    // Añadir un salto de línea al final de la fila de puntos
+    strcat(all_points_buffer, "\n");
+
+    // --- 3. Escribir el buffer completo en el archivo ---
+    printf("Escribiendo todos los puntos en el archivo...\r\n");
+
+    time = TIM2->CNT;
+    fr = f_write(&fil, all_points_buffer, strlen(all_points_buffer), &bytes_written);
+
+    printf("Tiempo de ejecución: %f s\r\n", difftime/80000000.0);
+
+    if (fr != FR_OK || bytes_written < strlen(all_points_buffer)) {
+        printf("Error: No se pudieron escribir todos los puntos en '%s'. Codigo FatFs: %d\r\n", filename, fr);
+        f_close(&fil);
+        return fr;
+    }
+
+    // --- 4. Escribir la segunda línea en el mismo archivo ---
+    char second_line_data[] = "Datos adicionales del experimento.\n";
+    fr = f_write(&fil, second_line_data, strlen(second_line_data), &bytes_written);
+    if (fr != FR_OK || bytes_written < strlen(second_line_data)) {
+        printf("Error: No se pudo escribir la segunda línea en '%s'. Codigo FatFs: %d\r\n", filename, fr);
+        f_close(&fil);
+        return fr;
+    }
+
+    // --- 5. Cerrar el archivo ---
+    fr = f_close(&fil);
+    if (fr != FR_OK) {
+        printf("Error: No se pudo cerrar el archivo '%s'. Codigo FatFs: %d\r\r\n", filename, fr);
+        return fr;
+    }
+
+    printf("Datos sinusoidales (fila única) y línea adicional guardados exitosamente en '%s'\r\n", filename);
+    return FR_OK; // Indicar éxito
+}
+#endif
 /* USER CODE END 4 */
 
 /**

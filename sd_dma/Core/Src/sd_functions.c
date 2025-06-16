@@ -36,14 +36,14 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi){
 static void SELECT(void)
 {
   HAL_GPIO_WritePin(SD_CS_PORT, SD_CS_PIN, GPIO_PIN_RESET);
-  vTaskDelay(1/portTICK_PERIOD_MS);
+  HAL_Delay(1);
 }
 
 /* slave deselect */
 static void DESELECT(void)
 {
   HAL_GPIO_WritePin(SD_CS_PORT, SD_CS_PIN, GPIO_PIN_SET);
-  vTaskDelay(1/portTICK_PERIOD_MS);
+  HAL_Delay(1);
 }
 
 /* SPI transmit a byte */
@@ -73,8 +73,7 @@ static void SPI_TxBuffer(uint8_t *buffer, uint16_t len)
 static uint8_t SPI_RxByte(void)
 {
   uint8_t dummy, data;
-  dummy = 0xFF; // Envía 0xFF para generar ciclos de reloj
-
+  dummy = 0xFF;
   if (spiDmaTransferComplete == 1)
   {
     spiDmaTransferComplete=0;

@@ -1,0 +1,10 @@
+23:37:43 **** Incremental Build of configuration Debug for project adctouart ****
+make -j4 all 
+arm-none-eabi-size  adctouart.elf 
+   text	   data	    bss	    dec	    hex	filename
+  25832	     92	   2236	  28160	   6e00	adctouart.elf
+Finished building: default.size.stdout
+ 
+
+23:37:45 Build Finished. 0 errors, 0 warnings. (took 1s.820ms)
+

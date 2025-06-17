@@ -1,4 +1,4 @@
-23:50:46 **** Incremental Build of configuration Debug for project proyecto_1 ****
+00:04:28 **** Incremental Build of configuration Debug for project proyecto_1 ****
 make -j4 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
 ../Core/Src/main.c: In function 'HAL_DMA_Callback':
@@ -64,6 +64,10 @@ C:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HA
 ../Core/Src/main.c:911:13: warning: unused variable 'len' [-Wunused-variable]
   911 |         int len = snprintf(temp_point_buffer, sizeof(temp_point_buffer), "%.4f", value);
       |             ^~~
+../Core/Src/main.c: In function 'write_magnitudes_to_sd':
+../Core/Src/main.c:988:13: warning: variable 'len' set but not used [-Wunused-but-set-variable]
+  988 |         int len; // Length of the formatted string including null terminator for temp_val_str
+      |             ^~~
 ../Core/Src/main.c: In function 'HAL_TIM_PeriodElapsedCallback':
 ../Core/Src/main.c:841:20: warning: 'magintudmax' may be used uninitialized [-Wmaybe-uninitialized]
   841 |             else if(magnitudes[i] > magintudmax) {
@@ -77,11 +81,11 @@ Finished building target: proyecto_1.elf
 arm-none-eabi-size  proyecto_1.elf 
 arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
    text	   data	    bss	    dec	    hex	filename
- 263616	    492	  86912	 351020	  55b2c	proyecto_1.elf
+ 263656	    492	  86912	 351060	  55b54	proyecto_1.elf
 Finished building: default.size.stdout
  
 Finished building: proyecto_1.list
  
 
-23:50:50 Build Finished. 0 errors, 12 warnings. (took 3s.894ms)
+00:04:38 Build Finished. 0 errors, 13 warnings. (took 9s.952ms)
 

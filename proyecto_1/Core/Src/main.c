@@ -245,19 +245,7 @@ int main(void)
       if (mount_res == FR_OK) {
    	   printf("SD montada....\r\n");
 
-       // --- NEW: Write magnitudes to SD if a full set is complete ---
-       if (1) {
-           printf("Writing magnitudes to SD...\r\n");
-           // Adjusted path to write inside the DATA directory
-           FRESULT res = write_magnitudes_to_sd("0:/DATA/magnitudes.csv", magnitudes, fft_points/2 + 1);
-           if (res == FR_OK) {
-               printf("Magnitudes written successfully.\r\n");
-           } else {
-               printf("Error writing magnitudes to SD: %d\r\n", res);
-           }
-           new_fft_data_complete = 0; // Reset flag after writing
-       }
-       // --- END NEW ---
+
       /*
           // Check free space after mounting to diagnose card health/write-protect
           DWORD free_clusters;
@@ -368,7 +356,19 @@ int main(void)
 
 	      }
 */
-
+      // --- NEW: Write magnitudes to SD if a full set is complete ---
+      if (new_fft_data_complete) {
+          printf("Writing magnitudes to SD...\r\n");
+          // Adjusted path to write inside the DATA directory
+          FRESULT res = write_magnitudes_to_sd("0:/DATA/magnitudes.csv", magnitudes, fft_points/2 + 1);
+          if (res == FR_OK) {
+              printf("Magnitudes written successfully.\r\n");
+          } else {
+              printf("Error writing magnitudes to SD: %d\r\n", res);
+          }
+          new_fft_data_complete = 0; // Reset flag after writing
+      }
+      // --- END NEW ---
 	  	  counterzzz++;
 
 	      // Ceder tiempo
@@ -971,6 +971,7 @@ FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array
     // a full 512-byte block can be written in a single f_write operation.
     char write_buffer[512 + 1];
     int current_buffer_pos = 0;
+    write_buffer[0] = '\0'; // IMPORTANT: Initialize buffer to be an empty string at the start
 
     // Open the file in append mode (FA_OPEN_APPEND).
     // If the file does not exist, FA_OPEN_APPEND creates it. If it exists, it
@@ -984,18 +985,23 @@ FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array
     // Iterate through magnitudes, format them, and accumulate them in the buffer.
     for (uint16_t i = 0; i < num_magnitudes; ++i) {
         char temp_val_str[20]; // Temporary buffer for a formatted float value (e.g., "-123.4567," consumes ~10-15 chars)
+        int len; // Length of the formatted string including null terminator for temp_val_str
+
         // Format the magnitude value with 4 decimal places.
-        int len = snprintf(temp_val_str, sizeof(temp_val_str), "%.4f", magnitudes_array[i]);
+        // Use snprintf to write into temp_val_str, ensuring null termination.
+        len = snprintf(temp_val_str, sizeof(temp_val_str), "%.4f", magnitudes_array[i]);
 
         // Calculate the required space for the current value and a comma (if needed).
-        int required_space = len + (i < num_magnitudes - 1 ? 1 : 0); // Length of value + length of comma
+        // Note: len from snprintf already includes the null terminator, but we want the actual string length.
+        // strlen(temp_val_str) would be safer here, but len is fine if we're careful.
+        int string_len = strlen(temp_val_str);
+        int required_space = string_len + (i < num_magnitudes - 1 ? 1 : 0); // Length of the formatted value + length of comma
 
         // If adding this value exceeds the write block limit (512 bytes),
         // first write the current buffer content to the file.
         // A margin of 20 is used to ensure that the next value (even a large one)
         // does not overflow the buffer before writing.
-
-        if (current_buffer_pos + required_space >= 512 - 20) {
+        if (current_buffer_pos + required_space >= sizeof(write_buffer) - 20) { // Using sizeof(write_buffer) for clarity
             fr = f_write(&fil, write_buffer, current_buffer_pos, &bytes_written);
             if (fr != FR_OK || bytes_written != current_buffer_pos) {
                 printf("Error writing block to file: %d\r\n", fr);
@@ -1006,22 +1012,19 @@ FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array
             write_buffer[0] = '\0'; // Clear the buffer for the next block
         }
 
-        // Add the formatted value to the write buffer.
-        strcat(write_buffer, temp_val_str);
-        current_buffer_pos += len;
+        // Append the formatted value to the write buffer using snprintf for safety.
+        current_buffer_pos += snprintf(&write_buffer[current_buffer_pos], sizeof(write_buffer) - current_buffer_pos, "%s", temp_val_str);
 
         // Add a comma if it's not the last value in the entire magnitudes array.
         if (i < num_magnitudes - 1) {
-            strcat(write_buffer, ",");
-            current_buffer_pos += 1;
+            current_buffer_pos += snprintf(&write_buffer[current_buffer_pos], sizeof(write_buffer) - current_buffer_pos, ",");
         }
     }
 
     // After processing all values, write any remaining data in the buffer.
     // Then, add a newline at the end of this "row" of magnitudes for the CSV.
     if (current_buffer_pos > 0) {
-        strcat(write_buffer, "\n");
-        current_buffer_pos += 1; // For the newline character
+        current_buffer_pos += snprintf(&write_buffer[current_buffer_pos], sizeof(write_buffer) - current_buffer_pos, "\n"); // Add newline
 
         fr = f_write(&fil, write_buffer, current_buffer_pos, &bytes_written);
         if (fr != FR_OK || bytes_written != current_buffer_pos) {

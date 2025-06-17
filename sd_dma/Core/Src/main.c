@@ -154,36 +154,65 @@ int main(void)
   HAL_TIM_Base_Start(&htim2);
 
   FATFS MiFatFs; // Objeto del sistema de archivos
-       char MiSdPath[4]; // Ruta ej: "0:/"
+        char MiSdPath[4]; // Ruta ej: "0:/"
 
-       if (f_mount(&MiFatFs, MiSdPath, 1) == FR_OK) {
-    	   printf("SD montada. Procediendo a generar CSV...\r\n");
+        // Attempt to mount the SD card
+        FRESULT mount_res = f_mount(&MiFatFs, MiSdPath, 1);
+        if (mount_res == FR_OK) {
+     	   printf("SD montada. Procediendo a generar CSV...\r\n");
 
-           // Llamar a la función para generar el archivo
-           FRESULT res = generate_sine_to_csv(
-                               "0:/sin1.csv", // Nombre del archivo en la SD
-                               5.0,                // Amplitud = 5.0
-                               2.0,                // Frecuencia = 2 Hz (2 ciclos por segundo)
-                               3.0,                // Duración = 3 segundos
-                               4                 // Número de puntos = 150 (generará 150 puntos en 3 seg)
-                           );
-           if (res == FR_OK) {
-        	   printf("Archivo CSV generado con éxito.\r\n");
+            // Check free space after mounting to diagnose card health/write-protect
+            DWORD free_clusters;
+            FATFS* filesystem_obj;
+            FRESULT getfree_res = f_getfree(MiSdPath, &free_clusters, &filesystem_obj);
+            if (getfree_res == FR_OK) {
+                total = (filesystem_obj->n_fatent - 2) * filesystem_obj->csize / 2; // Total KB
+                free_space = free_clusters * filesystem_obj->csize / 2; // Free KB
+                printf("SD Card: Total space: %luKB, Free space: %luKB\r\n", total, free_space);
+            } else {
+                printf("Error al obtener espacio libre de la SD Card. Codigo FatFs: %d\r\n", getfree_res);
+                // This often indicates a deeper issue than just a file not found, even if mount succeeded.
+            }
+
+            // --- NEW: Try creating a subdirectory first ---
+            const char* data_dir = "0:/DATA";
+            FRESULT mkdir_res = f_mkdir(data_dir);
+            if (mkdir_res == FR_OK) {
+                printf("Directorio '%s' creado exitosamente o ya existe.\r\n", data_dir);
+            } else if (mkdir_res == FR_EXIST) {
+                printf("Directorio '%s' ya existe. No es necesario crearlo.\r\n", data_dir);
+            } else {
+                printf("Error al crear directorio '%s'. Codigo FatFs: %d\r\n", data_dir, mkdir_res);
+                // If directory creation fails, it's unlikely file creation will succeed.
+                // We could exit here or try anyway for more debug info.
+            }
+
+            // Call the function to generate the file, now inside the DATA directory
+            FRESULT res_sine = generate_sine_to_csv(
+                                "0:/DATA/sin1.csv", // File name on SD, now in DATA folder
+                                5.0,                // Amplitude = 5.0
+                                2.0,                // Frequency = 2 Hz (2 cycles per second)
+                                3.0,                // Duration = 3 seconds
+                                4                 // Number of points = 150 (will generate 150 points in 3 sec)
+                            );
+            if (res_sine == FR_OK) {
+         	   printf("Archivo CSV 'sin1.csv' generado con éxito en /DATA.\r\n");
+            } else {
+         	   printf("Fallo al generar el archivo CSV 'sin1.csv'. Codigo FatFs: %d\r\n", res_sine); // Print detailed error
+            }
+
+            // Also update the magnitudes file path
+            // Note: The write_magnitudes_to_sd call is in HAL_TIM_PeriodElapsedCallback (TIM4),
+            // so ensure that the filename there also points to "0:/DATA/magnitudes.csv"
+            printf("La escritura de magnitudes intentará usar '0:/DATA/magnitudes.csv'.\r\n");
 
 
-           } else {
-        	   printf("Fallo al generar el archivo CSV.\r\n");
-           }
+            // Optional: unmount the drive if no longer needed
+            f_mount(NULL, MiSdPath, 0);
 
-
-           // Opcional: desmontar la unidad si ya no se necesita
-           f_mount(NULL, MiSdPath, 0);
-
-       } else {
-    	   printf("Error al montar la SD Card.\r\n");
-
-       }
-
+        } else {
+     	   printf("Error al montar la SD Card. Codigo FatFs: %d\r\n", mount_res); // Print detailed error for mount
+        }
   /* USER CODE END 2 */
 
   /* Infinite loop */

@@ -3,21 +3,21 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
+		<item value="startfft"/>
+		<item value="finish"/>
+		<item value="HAL_TIM_Base_Start_IT(&amp;htim5);"/>
+		<item value="HAL_TIM_Base_Stop_IT(&amp;htim5);"/>
+		<item value="htim5"/>
+		<item value="dma"/>
+		<item value="send_uart"/>
+		<item value="uart_tra"/>
+		<item value="uart"/>
 		<item value="generate_sine_to_csv"/>
 		<item value="full_fifo_buffer"/>
 		<item value="fifo_chunk_buffer"/>
 		<item value="printf"/>
 		<item value="HAL_TIM_Base_Start_IT(&amp;htim4)"/>
-		<item value="finish"/>
 		<item value="fft_in"/>
-		<item value="startfft"/>
-		<item value="spi_dma_transfer_error"/>
-		<item value="spi_dma_transfer_complete"/>
-		<item value="firststart"/>
-		<item value="HAL_TIM_Base_Start_IT(&amp;htim4);"/>
-		<item value="HAL_TIM_Base_Start_IT"/>
-		<item value="HAL_TIM_Base_Star_IT"/>
-		<item value="HAL_TIM_Base_Stop_IT"/>
 	</list>
 	<list key="replacehistory">
 		<item value="//printf"/>

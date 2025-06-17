@@ -100,7 +100,7 @@ float32_t mg_x_values[NUM_MUESTRAS]; // Sufficient size
 
 
 float32_t fft_z[fft_points];
-float32_t magnitudes[fft_points/2 + 1]; 
+float32_t magnitudes[fft_points/2 + 1];
 float32_t fft_in[fft_points] = {0};
 float32_t fft_in2[fft_points];
 int counterzzz= 0;
@@ -120,7 +120,9 @@ volatile uint8_t fifo_int_triggered = 0;   // Flag para la interrupción INT1
 volatile uint8_t spi_dma_transfer_complete = 0; // Flag para indicar fin de DMA
 volatile uint8_t spi_dma_transfer_error = 0;    // Flag para error DMA/SPI
 uint16_t last_dma_read_bytes = 0; // Para saber cuántos bytes procesar
-//FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points);
+FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points);
+FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array, uint16_t num_magnitudes); // Added prototype for new function
+static uint8_t new_fft_data_complete = 0; // Flag to indicate a full set of FFT data is ready for writing
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -196,7 +198,12 @@ int main(void)
 
   /* USER CODE BEGIN 1 */
 
-	arm_status status = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+    // Initialize the FFT instance (this was commented out, but is essential for FFT operations)
+	arm_status status_fft = arm_rfft_fast_init_f32(&fft_instance, fft_points);
+	if (status_fft != ARM_MATH_SUCCESS) {
+		printf("Error: Failed to initialize RFFT instance.\r\n");
+		Error_Handler();
+	}
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -228,43 +235,75 @@ int main(void)
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
-
-
+ HAL_TIM_Base_Start(&htim2);
+  printf("Starting\r\n");
 
    FATFS MiFatFs; // Objeto del sistema de archivos
       char MiSdPath[4]; // Ruta ej: "0:/"
 
-      /*if (f_mount(&MiFatFs, MiSdPath, 1) == FR_OK) {
-   	   printf("SD montada. Procediendo a generar CSV...\r\n");
+      // Attempt to mount the SD card
+      FRESULT mount_res = f_mount(&MiFatFs, MiSdPath, 1);
+      if (mount_res == FR_OK) {
+   	   printf("SD montada....\r\n");
 
-          // Llamar a la función para generar el archivo
-          FRESULT res = generate_sine_to_csv(
-                              "0:/sin1.csv", // Nombre del archivo en la SD
-                              5.0,                // Amplitud = 5.0
-                              2.0,                // Frecuencia = 2 Hz (2 ciclos por segundo)
-                              3.0,                // Duración = 3 segundos
-                              1024                 // Número de puntos = 150 (generará 150 puntos en 3 seg)
-                          );
-          if (res == FR_OK) {
-       	   printf("Archivo CSV generado con éxito.\r\n");
-
-
+      /*
+          // Check free space after mounting to diagnose card health/write-protect
+          DWORD free_clusters;
+          FATFS* filesystem_obj;
+          FRESULT getfree_res = f_getfree(MiSdPath, &free_clusters, &filesystem_obj);
+          if (getfree_res == FR_OK) {
+              total = (filesystem_obj->n_fatent - 2) * filesystem_obj->csize / 2; // Total KB
+              free_space = free_clusters * filesystem_obj->csize / 2; // Free KB
+              printf("SD Card: Total space: %luKB, Free space: %luKB\r\n", total, free_space);
           } else {
-       	   printf("Fallo al generar el archivo CSV.\r\n");
+              printf("Error al obtener espacio libre de la SD Card. Codigo FatFs: %d\r\n", getfree_res);
+              // This often indicates a deeper issue than just a file not found, even if mount succeeded.
           }
 
+          // --- NEW: Try creating a subdirectory first ---
+          const char* data_dir = "0:/DATA";
+          FRESULT mkdir_res = f_mkdir(data_dir);
+          if (mkdir_res == FR_OK) {
+              printf("Directorio '%s' creado exitosamente o ya existe.\r\n", data_dir);
+          } else if (mkdir_res == FR_EXIST) {
+              printf("Directorio '%s' ya existe. No es necesario crearlo.\r\n", data_dir);
+          } else {
+              printf("Error al crear directorio '%s'. Codigo FatFs: %d\r\n", data_dir, mkdir_res);
+              // If directory creation fails, it's unlikely file creation will succeed.
+              // We could exit here or try anyway for more debug info.
+          }
+
+          // Call the function to generate the file, now inside the DATA directory
+          FRESULT res_sine = generate_sine_to_csv(
+                              "0:/DATA/sin1.csv", // File name on SD, now in DATA folder
+                              5.0,                // Amplitude = 5.0
+                              2.0,                // Frequency = 2 Hz (2 cycles per second)
+                              3.0,                // Duration = 3 seconds
+                              4                 // Number of points = 150 (will generate 150 points in 3 sec)
+                          );
+          if (res_sine == FR_OK) {
+       	   printf("Archivo CSV 'sin1.csv' generado con éxito en /DATA.\r\n");
+          } else {
+       	   printf("Fallo al generar el archivo CSV 'sin1.csv'. Codigo FatFs: %d\r\n", res_sine); // Print detailed error
+          }
+
+          // Also update the magnitudes file path
+          // Note: The write_magnitudes_to_sd call is in HAL_TIM_PeriodElapsedCallback (TIM4),
+          // so ensure that the filename there also points to "0:/DATA/magnitudes.csv"
+          printf("La escritura de magnitudes intentará usar '0:/DATA/magnitudes.csv'.\r\n");
 
           // Opcional: desmontar la unidad si ya no se necesita
           f_mount(NULL, MiSdPath, 0);
 
-      } else {
-   	   printf("Error al montar la SD Card.\r\n");
+      */} else {
+   	   printf("Error al montar la SD Card. Codigo FatFs: %d\r\n", mount_res); // Print detailed error for mount
+      }
 
-      }*/
-      HAL_TIM_Base_Start(&htim2);
       printf("---- LSM6DSL FIFO Interrupt + DMA SPI (Accel Z @ 6.66kHz) ----\r\n");
        MEMS_Init_SPI_FIFO_Int(); // Llama a la inicialización correcta
-      HAL_TIM_Base_Start_IT(&htim5);
+      HAL_Delay(100);
+       HAL_TIM_Base_Start_IT(&htim5);
+
          if(HAL_TIM_Base_Start(&htim6) != HAL_OK)
        {
            printf("Error iniciando TIM6!\r\n");
@@ -641,17 +680,22 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
           //  }
 
         }
-    static int cantidad_sets = 0;
+    static int current_accumulated_sets = 0; // Renamed for clarity
     finish = 0;
 
     hdma_memtomem_dma1_channel1.XferCpltCallback = &HAL_DMA_Callback;
     startfft = 1;
     movefft = 1;
-    HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_x_values, &fft_in[cantidad_sets], sets_leidos);
-    cantidad_sets += sets_leidos;
-    if (cantidad_sets >= 4000) {
-        cantidad_sets = 0;
+    // Copy into fft_in at the correct offset
+    HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_x_values, &fft_in[current_accumulated_sets], sets_leidos);
+    current_accumulated_sets += sets_leidos;
+
+    // Check if a full set of data for FFT has been accumulated
+    if (current_accumulated_sets >= fft_points) { // Use fft_points (4096) for consistency with FFT
+        new_fft_data_complete = 1; // Flag that a full FFT buffer is ready
+        current_accumulated_sets = 0; // Reset for next accumulation cycle
     }
+
 
     /*float32_t fft_in[fft_points] = {0};
     memcpy(fft_in, mg_z_values, sizeof(mg_z_values)/2);
@@ -771,7 +815,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
         HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
 
         // Enviar datos binarios
-        HAL_UART_Transmit(&huart2, (uint8_t*)magnitudes, (fft_points/2+1) * sizeof(float32_t), HAL_MAX_DELAY);
+        //HAL_UART_Transmit(&huart2, (uint8_t*)magnitudes, (fft_points/2+1) * sizeof(float32_t), HAL_MAX_DELAY);
 
         // Enviar final
         const char* footer = "END.";
@@ -788,8 +832,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
         }
 
         for(int i = 0; i < fft_points/2 + 1; i++) {
-            dac_buffer[i] = (uint16_t)(magnitudes[i] / magintudmax * 4095.0); // Escalar a 12 bits
+            dac_buffer[i] = (uint16_t)(magnitudes[i] / magintudmax * 4095.0); // Scale to 12 bits
         }
+
+        // --- NEW: Write magnitudes to SD if a full set is complete ---
+        if (new_fft_data_complete) {
+            printf("Writing magnitudes to SD...\r\n");
+            // Adjusted path to write inside the DATA directory
+            FRESULT res = write_magnitudes_to_sd("0:/DATA/magnitudes.csv", magnitudes, fft_points/2 + 1);
+            if (res == FR_OK) {
+                printf("Magnitudes written successfully.\r\n");
+            } else {
+                printf("Error writing magnitudes to SD: %d\r\n", res);
+            }
+            new_fft_data_complete = 0; // Reset flag after writing
+        }
+        // --- END NEW ---
 
       	startfft = 0;
       }
@@ -812,8 +870,8 @@ int _write(int fd, char * ptr, int len)
   return len;
 }
 
-#if 0
-#define MAX_POINTS_BUFFER_SIZE (1024 * 16) // Aproximadamente 65KB
+#if 1
+#define MAX_POINTS_BUFFER_SIZE (4 * 16) // Aproximadamente 65KB
 
 FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points) {
     FIL fil;         // Objeto de archivo FatFs
@@ -838,13 +896,13 @@ FRESULT generate_sine_to_csv(const char* filename, double amplitude, double freq
     printf("Generando %d puntos sinusoidales en el buffer...\r\n", num_points);
     char temp_point_buffer[30]; // Buffer temporal para cada punto individual
 
-    // Verificar si el número de puntos excede la capacidad del buffer
-    if (num_points > 4096) {
-        printf("Error: El número de puntos (%d) excede el máximo soportado por el buffer estático (4096).\r\n", num_points);
+    // Simple estimation to prevent buffer overflow, assumes ~10 chars per point + margin.
+    if (num_points * 10 >= sizeof(all_points_buffer) - 50) {
+        printf("Error: Number of points (%d) exceeds max supported by static buffer in generate_sine_to_csv.\r\n", num_points);
         f_close(&fil);
-        return FR_INVALID_PARAMETER; // O un código de error apropiado
+        return FR_INVALID_PARAMETER;
     }
-    difftime = TIM2->CNT - time;
+
     for (int i = 0; i < num_points; ++i) {
         double t = (double)i * duration / (double)(num_points > 1 ? num_points - 1 : 1);
         double value = amplitude * sin(2.0 * M_PI * frequency * t);
@@ -852,19 +910,7 @@ FRESULT generate_sine_to_csv(const char* filename, double amplitude, double freq
         // Formatear el valor y agregarlo al buffer temporal
         int len = snprintf(temp_point_buffer, sizeof(temp_point_buffer), "%.4f", value);
 
-        // Verificar si snprintf truncó la salida
-        if (len < 0 || len >= sizeof(temp_point_buffer)) {
-            printf("Advertencia: Buffer temporal insuficiente al formatear punto %d.\r\n", i);
-            // Esto podría indicar que tu valor flotante es demasiado grande para el formato "%.4f"
-        }
-
-        // Concatenar el valor al buffer principal
-        // Asegurarse de que hay espacio suficiente en all_points_buffer ANTES de concatenar
-        if (strlen(all_points_buffer) + strlen(temp_point_buffer) + (i < num_points - 1 ? 1 : 0) + 2 >= MAX_POINTS_BUFFER_SIZE) {
-            printf("Error: Buffer principal insuficiente para todos los puntos. Reduce num_points o aumenta MAX_POINTS_BUFFER_SIZE.\r\n");
-            f_close(&fil);
-            return FR_DISK_ERR; // O un error más específico
-        }
+        // Concatenate the value to the main buffer
         strcat(all_points_buffer, temp_point_buffer);
 
         // Añadir la coma si no es el último punto
@@ -878,10 +924,7 @@ FRESULT generate_sine_to_csv(const char* filename, double amplitude, double freq
     // --- 3. Escribir el buffer completo en el archivo ---
     printf("Escribiendo todos los puntos en el archivo...\r\n");
 
-    time = TIM2->CNT;
     fr = f_write(&fil, all_points_buffer, strlen(all_points_buffer), &bytes_written);
-
-    printf("Tiempo de ejecución: %f s\r\n", difftime/80000000.0);
 
     if (fr != FR_OK || bytes_written < strlen(all_points_buffer)) {
         printf("Error: No se pudieron escribir todos los puntos en '%s'. Codigo FatFs: %d\r\n", filename, fr);
@@ -905,9 +948,102 @@ FRESULT generate_sine_to_csv(const char* filename, double amplitude, double freq
         return fr;
     }
 
-    printf("Datos sinusoidales (fila única) y línea adicional guardados exitosamente en '%s'\r\n", filename);
-    return FR_OK; // Indicar éxito
+    printf("Sinusoidal data (single row) and additional line successfully saved to '%s'\r\n", filename);
+    return FR_OK; // Indicate success
 }
+
+// --- NEW FUNCTION: write_magnitudes_to_sd ---
+/**
+  * @brief Writes magnitude array values to a CSV file on SD.
+  * Formats each float and writes to the file in 512-byte blocks.
+  * Opens the file in append mode to avoid overwriting previous data.
+  * @param filename Name of the CSV file on SD (e.g., "0:/magnitudes.csv")
+  * @param magnitudes_array Pointer to the float array with magnitudes.
+  * @param num_magnitudes Number of elements in the magnitudes_array.
+  * @retval FRESULT FatFs operation result code.
+  */
+FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array, uint16_t num_magnitudes) {
+    FIL fil;
+    FRESULT fr;
+    UINT bytes_written;
+
+    // Buffer to accumulate formatted data before writing in blocks.
+    // The size of 512 + 1 (for the null terminator) ensures that
+    // a full 512-byte block can be written in a single f_write operation.
+    char write_buffer[512 + 1];
+    int current_buffer_pos = 0;
+
+    // Open the file in append mode (FA_OPEN_APPEND).
+    // If the file does not exist, FA_OPEN_APPEND creates it. If it exists, it
+    // positions the write pointer at the end of the file to append new data.
+    fr = f_open(&fil, filename, FA_OPEN_APPEND | FA_WRITE);
+    if (fr != FR_OK) {
+        printf("Error: Could not open/create file '%s'. FatFs Code: %d\r\n", filename, fr);
+        return fr;
+    }
+
+    // Iterate through magnitudes, format them, and accumulate them in the buffer.
+    for (uint16_t i = 0; i < num_magnitudes; ++i) {
+        char temp_val_str[20]; // Temporary buffer for a formatted float value (e.g., "-123.4567," consumes ~10-15 chars)
+        // Format the magnitude value with 4 decimal places.
+        int len = snprintf(temp_val_str, sizeof(temp_val_str), "%.4f", magnitudes_array[i]);
+
+        // Calculate the required space for the current value and a comma (if needed).
+        int required_space = len + (i < num_magnitudes - 1 ? 1 : 0); // Length of value + length of comma
+
+        // If adding this value exceeds the write block limit (512 bytes),
+        // first write the current buffer content to the file.
+        // A margin of 20 is used to ensure that the next value (even a large one)
+        // does not overflow the buffer before writing.
+        if (current_buffer_pos + required_space >= 512 - 20) {
+            fr = f_write(&fil, write_buffer, current_buffer_pos, &bytes_written);
+            if (fr != FR_OK || bytes_written != current_buffer_pos) {
+                printf("Error writing block to file: %d\r\n", fr);
+                f_close(&fil);
+                return fr;
+            }
+            current_buffer_pos = 0; // Reset buffer position after writing
+            write_buffer[0] = '\0'; // Clear the buffer for the next block
+        }
+
+        // Add the formatted value to the write buffer.
+        strcat(write_buffer, temp_val_str);
+        current_buffer_pos += len;
+
+        // Add a comma if it's not the last value in the entire magnitudes array.
+        if (i < num_magnitudes - 1) {
+            strcat(write_buffer, ",");
+            current_buffer_pos += 1;
+        }
+    }
+
+    // After processing all values, write any remaining data in the buffer.
+    // Then, add a newline at the end of this "row" of magnitudes for the CSV.
+    if (current_buffer_pos > 0) {
+        strcat(write_buffer, "\n");
+        current_buffer_pos += 1; // For the newline character
+
+        fr = f_write(&fil, write_buffer, current_buffer_pos, &bytes_written);
+        if (fr != FR_OK || bytes_written != current_buffer_pos) {
+            printf("Error writing final block to file: %d\r\n", fr);
+            f_close(&fil);
+            return fr;
+        }
+    }
+
+    // Close the file. It is crucial to close the file after writing to ensure
+    // that all cached FatFs data is written to the SD and the file is not corrupted.
+    fr = f_close(&fil);
+    if (fr != FR_OK) {
+        printf("Error: Could not close file '%s'. FatFs Code: %d\r\r\n", filename, fr);
+        return fr;
+    }
+
+    printf("Magnitude data successfully saved to '%s'\r\n", filename);
+    return FR_OK; // Indicate operation success
+}
+// --- END NEW FUNCTION ---
+
 #endif
 /* USER CODE END 4 */
 

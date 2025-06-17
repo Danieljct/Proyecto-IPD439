@@ -65,7 +65,7 @@ static void SPI_TxBuffer(uint8_t *buffer, uint16_t len)
     HAL_SPI_Transmit_DMA(HSPI_SDCARD, buffer, len);
     // *********** Añadir espera aquí ***********
     while(spiDmaTransferComplete == 0){
-    	printf("niggers\n"); // Esperar a que la transferencia DMA termine
+    	printf("while writing\n"); // Esperar a que la transferencia DMA termine
     }
   }
 }

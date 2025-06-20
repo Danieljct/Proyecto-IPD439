@@ -98,9 +98,13 @@ float32_t mg_x_values[NUM_MUESTRAS]; // Sufficient size
 //float32_t mg_y_values[NUM_MUESTRAS];
 //float32_t mg_z_values[NUM_MUESTRAS];
 
+// NEW: Variables para el manejo de nombres de archivo secuenciales
+static int magnitude_file_idx = 0; // Índice para el nombre del archivo de magnitudes (0 = magnitudes.csv, 1 = magnitudes1.csv, etc.)
+char current_magnitudes_filename[50]; // Buffer para construir el nombre del archivo actual
 
 float32_t fft_z[fft_points];
 float32_t magnitudes[fft_points/2 + 1];
+float32_t magnitudesssd[fft_points/2 + 1];
 float32_t fft_in[fft_points] = {0};
 float32_t fft_in2[fft_points];
 int counterzzz= 0;
@@ -360,7 +364,8 @@ int main(void)
       if (new_fft_data_complete) {
           printf("Writing magnitudes to SD...\r\n");
           // Adjusted path to write inside the DATA directory
-          FRESULT res = write_magnitudes_to_sd("0:/DATA/magnitudes.csv", magnitudes, fft_points/2 + 1);
+          memcpy(magnitudesssd, magnitudes, sizeof(magnitudes)); // Copy to SSD array
+          FRESULT res = write_magnitudes_to_sd("0:/DATA/magnitudes.csv", magnitudesssd, fft_points/2 + 1);
           if (res == FR_OK) {
               printf("Magnitudes written successfully.\r\n");
           } else {
@@ -963,8 +968,12 @@ FRESULT generate_sine_to_csv(const char* filename, double amplitude, double freq
   * @retval FRESULT FatFs operation result code.
   */
 FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array, uint16_t num_magnitudes) {
-    FRESULT fr;
+    FIL fil;
+    FRESULT fr_open;
+    FRESULT fr_write_block; // For intermediate write results
+    FRESULT fr_close;
     UINT bytes_written;
+    FRESULT final_res = FR_OK; // Assume success unless an error occurs
 
     // Buffer to accumulate formatted data before writing in blocks.
     // The size of 512 + 1 (for the null terminator) ensures that
@@ -976,12 +985,12 @@ FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array
     // Open the file in append mode (FA_OPEN_APPEND).
     // If the file does not exist, FA_OPEN_APPEND creates it. If it exists, it
     // positions the write pointer at the end of the file to append new data.
-    fr = f_open(&fil, filename, FA_OPEN_APPEND | FA_WRITE);
-    if (fr != FR_OK) {
-        printf("Error: Could not open/create file '%s'. FatFs Code: %d\r\n", filename, fr);
-        return fr;
+    fr_open = f_open(&fil, filename, FA_OPEN_APPEND | FA_WRITE);
+    if (fr_open != FR_OK) {
+        printf("Error: Could not open/create file '%s'. FatFs Code: %d\r\n", filename, fr_open);
+        return fr_open; // Return directly if opening fails, as there's no file to close
     }
-    printf("Writing %d magnitudes to '%s'...\r\n", num_magnitudes, filename);
+
     // Iterate through magnitudes, format them, and accumulate them in the buffer.
     for (uint16_t i = 0; i < num_magnitudes; ++i) {
         char temp_val_str[20]; // Temporary buffer for a formatted float value (e.g., "-123.4567," consumes ~10-15 chars)
@@ -1002,11 +1011,11 @@ FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array
         // A margin of 20 is used to ensure that the next value (even a large one)
         // does not overflow the buffer before writing.
         if (current_buffer_pos + required_space >= sizeof(write_buffer) - 20) { // Using sizeof(write_buffer) for clarity
-            fr = f_write(&fil, write_buffer, current_buffer_pos, &bytes_written);
-            if (fr != FR_OK || bytes_written != current_buffer_pos) {
-                printf("Error writing block to file: %d\r\n", fr);
-                f_close(&fil);
-                return fr;
+            fr_write_block = f_write(&fil, write_buffer, current_buffer_pos, &bytes_written);
+            if (fr_write_block != FR_OK || bytes_written != current_buffer_pos) {
+                printf("Error writing block to file: %d\r\n", fr_write_block);
+                final_res = fr_write_block; // Store the error
+                goto cleanup_magnitudes; // Jump to cleanup to ensure file is closed
             }
             current_buffer_pos = 0; // Reset buffer position after writing
             write_buffer[0] = '\0'; // Clear the buffer for the next block
@@ -1026,24 +1035,29 @@ FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array
     if (current_buffer_pos > 0) {
         current_buffer_pos += snprintf(&write_buffer[current_buffer_pos], sizeof(write_buffer) - current_buffer_pos, "\n"); // Add newline
 
-        fr = f_write(&fil, write_buffer, current_buffer_pos, &bytes_written);
-        if (fr != FR_OK || bytes_written != current_buffer_pos) {
-            printf("Error writing final block to file: %d\r\n", fr);
-            f_close(&fil);
-            return fr;
+        fr_write_block = f_write(&fil, write_buffer, current_buffer_pos, &bytes_written);
+        if (fr_write_block != FR_OK || bytes_written != current_buffer_pos) {
+            printf("Error writing final block to file: %d\r\n", fr_write_block);
+            final_res = fr_write_block; // Store the error
+            // No need for goto here, naturally falls to cleanup
         }
     }
 
+cleanup_magnitudes: // Label for cleanup
     // Close the file. It is crucial to close the file after writing to ensure
     // that all cached FatFs data is written to the SD and the file is not corrupted.
-    fr = f_close(&fil);
-    if (fr != FR_OK) {
-        printf("Error: Could not close file '%s'. FatFs Code: %d\r\r\n", filename, fr);
-        return fr;
+    fr_close = f_close(&fil);
+    if (fr_close != FR_OK) {
+        printf("Error: Could not close file '%s'. FatFs Code: %d\r\r\n", filename, fr_close);
+        if (final_res == FR_OK) { // Only overwrite final_res if no other error occurred
+            final_res = fr_close;
+        }
     }
 
-    printf("Magnitude data successfully saved to '%s'\r\n", filename);
-    return FR_OK; // Indicate operation success
+    if (final_res == FR_OK) {
+        printf("Magnitude data successfully saved to '%s'\r\r\n", filename);
+    }
+    return final_res;
 }
 // --- END NEW FUNCTION ---
 

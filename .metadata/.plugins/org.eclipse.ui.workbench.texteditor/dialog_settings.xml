@@ -3,6 +3,13 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
+		<item value="MiFatFs"/>
+		<item value="write_magnitudes_to_sd"/>
+		<item value="END"/>
+		<item value="DMA:"/>
+		<item value="START:"/>
+		<item value="START"/>
+		<item value="new_fft_data_complete"/>
 		<item value="startfft"/>
 		<item value="finish"/>
 		<item value="HAL_TIM_Base_Start_IT(&amp;htim5);"/>
@@ -11,13 +18,6 @@
 		<item value="dma"/>
 		<item value="send_uart"/>
 		<item value="uart_tra"/>
-		<item value="uart"/>
-		<item value="generate_sine_to_csv"/>
-		<item value="full_fifo_buffer"/>
-		<item value="fifo_chunk_buffer"/>
-		<item value="printf"/>
-		<item value="HAL_TIM_Base_Start_IT(&amp;htim4)"/>
-		<item value="fft_in"/>
 	</list>
 	<list key="replacehistory">
 		<item value="//printf"/>

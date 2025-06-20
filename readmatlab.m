@@ -48,7 +48,7 @@ xlim([0 Fs/2]); % Asegura el rango completo de frecuencias
 
 % --- Animación Fila a Fila ---
 disp('Iniciando animación. Presiona Ctrl+C en la ventana de comandos para detener.');
-pause_duration = 0.1; % Duración de la pausa entre cada frame (segundos)
+pause_duration = 0.05; % Duración de la pausa entre cada frame (segundos)
 
 for i = 1:size(datos_magnitudes, 1)
     % Actualiza los datos del plot con la fila actual

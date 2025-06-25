@@ -18,7 +18,7 @@ class FFTViewer(QMainWindow):
         self.filename = 'magnitudes.csv'  # Default filename
         self.fs = 6660  # Sampling frequency (Hz)
         self.fft_points = 4096  # Number of FFT points used in STM32
-        self.num_magnitudes = int(self.fft_points / 2 + 1)
+        self.num_magnitudes = 1024#int(self.fft_points / 2 + 1)
         self.frequencies = np.linspace(0, self.fs / 2, self.num_magnitudes)
 
         self.data_magnitudes = None

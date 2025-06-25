@@ -1,10 +1,91 @@
-16:53:58 **** Incremental Build of configuration Debug for project proyecto_1 ****
+18:04:19 **** Incremental Build of configuration Debug for project proyecto_1 ****
 make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'HAL_DMA_Callback':
+../Core/Src/main.c:156:72: warning: passing argument 2 of 'HAL_DMA_Start_IT' makes integer from pointer without a cast [-Wint-conversion]
+  156 |                         HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, fft_in, fft_in2, fft_points);
+      |                                                                        ^~~~~~
+      |                                                                        |
+      |                                                                        float32_t * {aka float *}
+In file included from ../Core/Inc/stm32l4xx_hal_conf.h:266,
+                 from C:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal.h:29,
+                 from ../Core/Inc/main.h:30,
+                 from ../Core/Src/main.c:20:
+C:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_dma.h:766:70: note: expected 'uint32_t' {aka 'long unsigned int'} but argument is of type 'float32_t *' {aka 'float *'}
+  766 | HAL_StatusTypeDef HAL_DMA_Start_IT(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength);
+      |                                                             ~~~~~~~~~^~~~~~~~~~
+../Core/Src/main.c:156:80: warning: passing argument 3 of 'HAL_DMA_Start_IT' makes integer from pointer without a cast [-Wint-conversion]
+  156 |                         HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, fft_in, fft_in2, fft_points);
+      |                                                                                ^~~~~~~
+      |                                                                                |
+      |                                                                                float32_t * {aka float *}
+C:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_dma.h:766:91: note: expected 'uint32_t' {aka 'long unsigned int'} but argument is of type 'float32_t *' {aka 'float *'}
+  766 | HAL_StatusTypeDef HAL_DMA_Start_IT(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength);
+      |                                                                                  ~~~~~~~~~^~~~~~~~~~
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:570:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  570 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:571:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  571 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:562:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  562 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Start_FIFO_Read_DMA':
+../Core/Src/main.c:709:18: warning: unused variable 'time_us' [-Wunused-variable]
+  709 |         uint32_t time_us = difftime / 80;
+      |                  ^~~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_DMA':
+../Core/Src/main.c:771:52: warning: passing argument 2 of 'HAL_DMA_Start_IT' makes integer from pointer without a cast [-Wint-conversion]
+  771 |     HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_x_values, &fft_in[current_accumulated_sets], sets_leidos);
+      |                                                    ^~~~~~~~~~~
+      |                                                    |
+      |                                                    float32_t * {aka float *}
+C:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_dma.h:766:70: note: expected 'uint32_t' {aka 'long unsigned int'} but argument is of type 'float32_t *' {aka 'float *'}
+  766 | HAL_StatusTypeDef HAL_DMA_Start_IT(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength);
+      |                                                             ~~~~~~~~~^~~~~~~~~~
+../Core/Src/main.c:771:65: warning: passing argument 3 of 'HAL_DMA_Start_IT' makes integer from pointer without a cast [-Wint-conversion]
+  771 |     HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, mg_x_values, &fft_in[current_accumulated_sets], sets_leidos);
+      |                                                                 ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+      |                                                                 |
+      |                                                                 float32_t * {aka float *}
+C:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/stm32l4xx_hal_dma.h:766:91: note: expected 'uint32_t' {aka 'long unsigned int'} but argument is of type 'float32_t *' {aka 'float *'}
+  766 | HAL_StatusTypeDef HAL_DMA_Start_IT(DMA_HandleTypeDef *hdma, uint32_t SrcAddress, uint32_t DstAddress, uint32_t DataLength);
+      |                                                                                  ~~~~~~~~~^~~~~~~~~~
+../Core/Src/main.c:724:14: warning: unused variable 'time_us' [-Wunused-variable]
+  724 |     uint32_t time_us = difftime / 80;
+      |              ^~~~~~~
+../Core/Src/main.c: In function 'HAL_TIM_PeriodElapsedCallback':
+../Core/Src/main.c:869:14: warning: variable 'count' set but not used [-Wunused-but-set-variable]
+  869 |   static int count = 0;
+      |              ^~~~~
+../Core/Src/main.c: In function 'generate_sine_to_csv':
+../Core/Src/main.c:984:13: warning: unused variable 'len' [-Wunused-variable]
+  984 |         int len = snprintf(temp_point_buffer, sizeof(temp_point_buffer), "%.4f", value);
+      |             ^~~
+../Core/Src/main.c: In function 'write_magnitudes_to_sd':
+../Core/Src/main.c:1063:21: warning: variable 'chars_formatted' set but not used [-Wunused-but-set-variable]
+ 1063 |                 int chars_formatted;
+      |                     ^~~~~~~~~~~~~~~
+../Core/Src/main.c: In function 'HAL_TIM_PeriodElapsedCallback':
+../Core/Src/main.c:914:20: warning: 'magintudmax' may be used uninitialized [-Wmaybe-uninitialized]
+  914 |             else if(magnitudes[i] > magintudmax) {
+      |                    ^
+../Core/Src/main.c:909:15: note: 'magintudmax' was declared here
+  909 |         float magintudmax;
+      |               ^~~~~~~~~~~
+arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1.elf
+ 
 arm-none-eabi-size  proyecto_1.elf 
+arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
    text	   data	    bss	    dec	    hex	filename
- 263624	    492	  90924	 355040	  56ae0	proyecto_1.elf
+ 264208	    492	  82788	 347488	  54d60	proyecto_1.elf
 Finished building: default.size.stdout
  
+Finished building: proyecto_1.list
+ 
 
-16:53:59 Build Finished. 0 errors, 0 warnings. (took 1s.462ms)
+18:04:23 Build Finished. 0 errors, 13 warnings. (took 4s.69ms)
 

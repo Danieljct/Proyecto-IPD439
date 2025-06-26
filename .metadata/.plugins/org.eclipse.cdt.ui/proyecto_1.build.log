@@ -1,4 +1,4 @@
-18:04:19 **** Incremental Build of configuration Debug for project proyecto_1 ****
+22:18:40 **** Incremental Build of configuration Debug for project proyecto_1 ****
 make -j4 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
 ../Core/Src/main.c: In function 'HAL_DMA_Callback':
@@ -81,11 +81,11 @@ Finished building target: proyecto_1.elf
 arm-none-eabi-size  proyecto_1.elf 
 arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
    text	   data	    bss	    dec	    hex	filename
- 264208	    492	  82788	 347488	  54d60	proyecto_1.elf
+ 264224	    492	  85516	 350232	  55818	proyecto_1.elf
 Finished building: default.size.stdout
  
 Finished building: proyecto_1.list
  
 
-18:04:23 Build Finished. 0 errors, 13 warnings. (took 4s.69ms)
+22:18:46 Build Finished. 0 errors, 13 warnings. (took 5s.848ms)
 

@@ -74,7 +74,7 @@
 
 #define fft_points 4096
 #define NUM_MUESTRAS 682
-#define LINES_PER_MAG_FILE 10
+#define LINES_PER_MAG_FILE 3
 //#define comments
 /* USER CODE END PD */
 
@@ -92,7 +92,7 @@ uint8_t full_fifo_buffer[FIFO_MAX_BYTES];
 uint8_t fifo_chunk_buffer[READ_BUFFER_BYTES];
 int32_t raw_x_values[NUM_MUESTRAS]; // Sufficient size
 //int32_t raw_y_values[NUM_MUESTRAS];
-//int32_t raw_z_values[NUM_MUESTRAS];
+int32_t raw_z_values[NUM_MUESTRAS];
 
 // Buffers para valores CONVERTIDOS a mg (almacenados en 32 bits)
 float32_t mg_x_values[NUM_MUESTRAS]; // Sufficient size
@@ -746,10 +746,10 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
             //raw_y_values[i] = (int16_t)(((uint16_t)pSampleBytes[3] << 8) | pSampleBytes[2]);
 
             // Z (LSB in pSampleBytes[4], MSB in pSampleBytes[5])
-            //raw_z_values[i] = (int16_t)(((uint16_t)pSampleBytes[5] << 8) | pSampleBytes[4]);
+            raw_z_values[i] = (int16_t)(((uint16_t)pSampleBytes[5] << 8) | pSampleBytes[4]);
 
             // --- Convert Raw Values to mg and Store in 32-bit Buffers ---
-            mg_x_values[i] = (float32_t)((float)raw_x_values[i] * cached_acc_sensitivity);
+            mg_x_values[i] = (float32_t)((float)raw_z_values[i] * cached_acc_sensitivity);
          //   mg_y_values[i] = (float32_t)((float)raw_y_values[i] * cached_acc_sensitivity);
          //   mg_z_values[i] = (float32_t)((float)raw_z_values[i] * cached_acc_sensitivity);
 

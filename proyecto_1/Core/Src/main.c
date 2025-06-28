@@ -34,6 +34,7 @@
 #include "arm_math.h"
 #include <stdarg.h>
 #include <string.h>
+#include <stdbool.h> // Necesario para 'bool'
 #include "sd_functions.h"
 /* USER CODE END Includes */
 
@@ -74,7 +75,7 @@
 
 #define fft_points 4096
 #define NUM_MUESTRAS 682
-#define LINES_PER_MAG_FILE 10
+#define LINES_PER_MAG_FILE 10 // NEW: Número de líneas a escribir por archivo de magnitudes
 //#define comments
 /* USER CODE END PD */
 
@@ -90,7 +91,7 @@ extern SPI_HandleTypeDef hspi3;
 arm_rfft_fast_instance_f32 fft_instance;
 uint8_t full_fifo_buffer[FIFO_MAX_BYTES];
 uint8_t fifo_chunk_buffer[READ_BUFFER_BYTES];
-int32_t raw_x_values[NUM_MUESTRAS]; // Sufficient size
+//int32_t raw_x_values[NUM_MUESTRAS]; // Sufficient size
 //int32_t raw_y_values[NUM_MUESTRAS];
 int32_t raw_z_values[NUM_MUESTRAS];
 
@@ -102,7 +103,10 @@ float32_t mg_x_values[NUM_MUESTRAS]; // Sufficient size
 
 float32_t fft_z[fft_points];
 float32_t magnitudes[fft_points/2 + 1];
-float32_t magnitudesssd[fft_points/2 + 1] = {0};
+float32_t magnitudesssd0[fft_points/2+1];
+// Reintroducción de magnitudesssd con alineación explícita.
+// Esta copia es necesaria para evitar problemas de race condition con 'magnitudes'.
+
 float32_t fft_in[fft_points] = {0};
 float32_t fft_in2[fft_points];
 int counterzzz= 0;
@@ -129,7 +133,8 @@ volatile uint8_t spi_dma_transfer_complete = 0; // Flag para indicar fin de DMA
 volatile uint8_t spi_dma_transfer_error = 0;    // Flag para error DMA/SPI
 uint16_t last_dma_read_bytes = 0; // Para saber cuántos bytes procesar
 FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points);
-FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array, uint16_t num_magnitudes, int is_new_file);// Added prototype for new function
+// Modificada para aceptar el modo de apertura
+FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array, uint16_t num_magnitudes, bool is_new_file); 
 static uint8_t new_fft_data_complete = 0; // Flag to indicate a full set of FFT data is ready for writing
 static uint8_t sd_transfer_start = 0;
 /* USER CODE END PV */
@@ -254,6 +259,7 @@ int main(void)
   printf("Starting\r\n");
 
       char MiSdPath[4]; // Ruta ej: "0:/"
+
       // Attempt to mount the SD card
       FRESULT mount_res = f_mount(&fs, MiSdPath, 1);
       if (mount_res == FR_OK) {
@@ -279,6 +285,8 @@ int main(void)
           Error_Handler();
       }
 
+
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -302,32 +310,39 @@ int main(void)
           FRESULT res;
           int retry_count = 0;
           const int MAX_RETRIES = 3; // Intentar 3 veces la misma operación de escritura antes de cambiar el nombre
-          int write_succeeded = 0;
+          bool write_succeeded = false;
           // Determina el modo de apertura: crear si es la primera línea del archivo, o si hubo un error irrecuperable
-          int create_new_file_mode = (lines_in_current_file_counter == 0);
+          // Ahora, también es nuevo archivo si el contador de líneas está en 0.
+          bool create_new_file_mode = (lines_in_current_file_counter == 0); 
 
           do {
+              // Copiar magnitudes a magnitudesssd para asegurar la consistencia durante la escritura.
+              // Es esencial porque 'magnitudes' puede ser modificado por interrupciones.
+              memcpy(magnitudesssd0, magnitudes, sizeof(magnitudesssd0)); // Copia aquí
+
               // Pasa el modo de apertura a la función write_magnitudes_to_sd
-             // Copiar magnitudes a magnitudesssd
-              res = write_magnitudes_to_sd(current_magnitudes_filename, magnitudes, fft_points/2 + 1, create_new_file_mode);
+              res = write_magnitudes_to_sd(current_magnitudes_filename, magnitudesssd0, fft_points/2 + 1, create_new_file_mode);
+              
 
               if (res == FR_OK) {
-                  write_succeeded = 1;
+                  printf("Magnitudes written successfully to '%s' (line %d). Total for file: %d.\r\r\n", 
+                         current_magnitudes_filename, lines_in_current_file_counter + 1, lines_in_current_file_counter + 1);
+                  write_succeeded = true;
                   lines_in_current_file_counter++; // Incrementa el contador de línea si la escritura es exitosa
               } else {
                   printf("Error writing magnitudes to SD: %d to '%s'. Attempting remount and retry (%d/%d).\r\n", res, current_magnitudes_filename, retry_count + 1, MAX_RETRIES);
-
+                  
                   // --- Desmontar y montar la SD si la escritura falla ---
                   FRESULT unmount_res = f_mount(NULL, MiSdPath, 0); // Desmontar
-                  if (unmount_res == FR_OK) {
-                      printf("SD Card unmounted successfully.\r\n");
-                  } else {
-                      printf("Error unmounting SD Card. FatFs Code: %d\r\n", unmount_res);
+                  if (unmount_res == FR_OK) { 
+                      printf("SD Card unmounted successfully.\r\n"); 
+                  } else { 
+                      printf("Error unmounting SD Card. FatFs Code: %d\r\n", unmount_res); 
                   }
                   HAL_Delay(100); // Pequeña pausa para estabilización
                   FRESULT mount_res_retry = f_mount(&fs, MiSdPath, 1); // Montar de nuevo
-                  if (mount_res_retry == FR_OK) {
-                      printf("SD Card remounted successfully.\r\n");
+                  if (mount_res_retry == FR_OK) { 
+                      printf("SD Card remounted successfully.\r\n"); 
                       // Re-check free space just for diagnostic
                       DWORD free_clusters_remount;
                       FATFS* filesystem_obj_remount;
@@ -336,9 +351,9 @@ int main(void)
                                  (filesystem_obj_remount->n_fatent - 2) * filesystem_obj_remount->csize / 2,
                                  free_clusters_remount * filesystem_obj_remount->csize / 2);
                       }
-                      create_new_file_mode = 1; // Si el remonte funciona, la próxima escritura será en modo CREATE_ALWAYS
-                  } else {
-                      printf("CRITICAL ERROR: Failed to remount SD Card. FatFs Code: %d. No further retries for this file.\r\n", mount_res_retry);
+                      create_new_file_mode = true; // Si el remonte funciona, la próxima escritura será en modo CREATE_ALWAYS
+                  } else { 
+                      printf("CRITICAL ERROR: Failed to remount SD Card. FatFs Code: %d. No further retries for this file.\r\n", mount_res_retry); 
                       retry_count = MAX_RETRIES; // Forzar salida del do-while si el remonte falla.
                   }
               }
@@ -348,7 +363,7 @@ int main(void)
           if (!write_succeeded) {
               // Todos los reintentos fallaron para el nombre de archivo/línea actual. Mover al siguiente archivo.
               printf("All retries failed for '%s'. Moving to next file index.\r\n", current_magnitudes_filename);
-              magnitude_file_idx++;
+              magnitude_file_idx++; 
               lines_in_current_file_counter = 0; // Reinicia el contador de línea para el nuevo archivo
           } else if (lines_in_current_file_counter >= LINES_PER_MAG_FILE) { // Si se alcanzaron las 10 líneas
               printf("%d lines written to '%s'. Moving to next file.\r\n", LINES_PER_MAG_FILE, current_magnitudes_filename);
@@ -661,7 +676,7 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
 
             // --- Extract Raw 16-bit Values and Store in 32-bit Buffers ---
             // X (LSB in pSampleBytes[0], MSB in pSampleBytes[1])
-            raw_x_values[i] = (int16_t)(((uint16_t)pSampleBytes[1] << 8) | pSampleBytes[0]);
+            //raw_x_values[i] = (int16_t)(((uint16_t)pSampleBytes[1] << 8) | pSampleBytes[0]);
 
             // Y (LSB in pSampleBytes[2], MSB in pSampleBytes[3])
             //raw_y_values[i] = (int16_t)(((uint16_t)pSampleBytes[3] << 8) | pSampleBytes[2]);
@@ -845,183 +860,200 @@ int _write(int fd, char * ptr, int len)
 
 FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points) {
     FIL fil;         // Objeto de archivo FatFs
-    FRESULT fr;      // Variable para códigos de retorno de FatFs
-    UINT bytes_written; // Variable para almacenar bytes escritos por f_write
+    FRESULT fr_open;
+    FRESULT fr_write_block; // Para resultados intermedios de escritura
+    FRESULT fr_close;
+    UINT bytes_written;
+    FRESULT final_res = FR_OK; // Asume éxito a menos que ocurra un error
 
-    // --- Buffer estático para todos los puntos ---
-    // ¡Precaución! Un buffer de este tamaño (aprox. 65KB) puede ser grande para la RAM de algunos microcontroladores.
-    // Asegúrate de que tu sistema tiene suficiente memoria.
-    static char all_points_buffer[MAX_POINTS_BUFFER_SIZE];
-    all_points_buffer[0] = '\0'; // Inicializar el buffer como una cadena vacía
+    // Buffer estático para todos los puntos de la línea sinusoidal.
+    // Ajustado para el tamaño del ejemplo (num_points=4). Para más puntos,
+    // se requeriría un buffer más grande o escribir en el archivo por segmentos.
+    static char all_points_buffer[256]; // Suficiente para el ejemplo de 4 puntos y un margen
+    int current_buffer_pos = 0; // Posición actual en el buffer
+    all_points_buffer[0] = '\0'; // Inicializa el buffer como una cadena vacía
 
     // --- 1. Abrir/Crear el archivo en modo escritura (FA_WRITE) ---
     // FA_CREATE_ALWAYS: Crea un archivo nuevo. Si ya existe, lo sobrescribe.
-    fr = f_open(&fil, filename, FA_CREATE_ALWAYS | FA_WRITE);
-    if (fr != FR_OK) {
-        printf("Error: No se pudo abrir/crear el archivo '%s'. Codigo FatFs: %d\r\n", filename, fr);
-        return fr;
+    fr_open = f_open(&fil, filename, FA_CREATE_ALWAYS | FA_WRITE);
+    if (fr_open != FR_OK) {
+        printf("Error: No se pudo abrir/crear el archivo '%s'. Codigo FatFs: %d\r\n", filename, fr_open);
+        return fr_open; // Retorna directamente si la apertura falla, no hay archivo que cerrar.
     }
 
     // --- 2. Generar puntos y acumular en el buffer ---
-    printf("Generando %d puntos sinusoidales en el buffer...\r\n", num_points);
+    printf("Generando %d puntos sinusoidales en el buffer....\r\n", num_points);
     char temp_point_buffer[30]; // Buffer temporal para cada punto individual
-
-    // Simple estimation to prevent buffer overflow, assumes ~10 chars per point + margin.
-    if (num_points * 10 >= sizeof(all_points_buffer) - 50) {
-        printf("Error: Number of points (%d) exceeds max supported by static buffer in generate_sine_to_csv.\r\n", num_points);
-        f_close(&fil);
-        return FR_INVALID_PARAMETER;
-    }
 
     for (int i = 0; i < num_points; ++i) {
         double t = (double)i * duration / (double)(num_points > 1 ? num_points - 1 : 1);
         double value = amplitude * sin(2.0 * M_PI * frequency * t);
 
-        // Formatear el valor y agregarlo al buffer temporal
+        // Formatea el valor y agrégalo al buffer temporal
         int len = snprintf(temp_point_buffer, sizeof(temp_point_buffer), "%.4f", value);
 
-        // Concatenate the value to the main buffer
-        strcat(all_points_buffer, temp_point_buffer);
+        // Calcula el espacio requerido en el buffer principal para el valor + coma potencial + terminador nulo
+        int required_space = len + (i < num_points - 1 ? 1 : 0) + 1;
 
-        // Añadir la coma si no es el último punto
+        // Verifica si añadir esto desbordará el buffer
+        if (current_buffer_pos + required_space > sizeof(all_points_buffer)) {
+            printf("Error: Buffer principal insuficiente en generate_sine_to_csv. Reduzca num_points o aumente el buffer.\r\n");
+            final_res = FR_DISK_ERR; // O otro error apropiado
+            goto cleanup_sine; // Salta a la limpieza
+        }
+
+        // Añade el valor formateado al buffer principal usando snprintf para seguridad
+        current_buffer_pos += snprintf(&all_points_buffer[current_buffer_pos], sizeof(all_points_buffer) - current_buffer_pos, "%s", temp_point_buffer);
+
+        // Añade una coma si no es el último punto
         if (i < num_points - 1) {
-            strcat(all_points_buffer, ",");
+            current_buffer_pos += snprintf(&all_points_buffer[current_buffer_pos], sizeof(all_points_buffer) - current_buffer_pos, ",");
         }
     }
-    // Añadir un salto de línea al final de la fila de puntos
-    strcat(all_points_buffer, "\n");
+    // Añade un salto de línea al final de la fila de puntos
+    if (current_buffer_pos + 1 > sizeof(all_points_buffer)) { // +1 para el salto de línea
+        printf("Error: Buffer principal insuficiente para el salto de linea en generate_sine_to_csv.\r\n");
+        final_res = FR_DISK_ERR;
+        goto cleanup_sine;
+    }
+    current_buffer_pos += snprintf(&all_points_buffer[current_buffer_pos], sizeof(all_points_buffer) - current_buffer_pos, "\n");
 
-    // --- 3. Escribir el buffer completo en el archivo ---
-    printf("Escribiendo todos los puntos en el archivo...\r\n");
 
-    fr = f_write(&fil, all_points_buffer, strlen(all_points_buffer), &bytes_written);
+    // --- 3. Escribe el buffer completo en el archivo ---
+    printf("Escribiendo todos los puntos en el archivo....\r\n");
 
-    if (fr != FR_OK || bytes_written < strlen(all_points_buffer)) {
-        printf("Error: No se pudieron escribir todos los puntos en '%s'. Codigo FatFs: %d\r\n", filename, fr);
-        f_close(&fil);
-        return fr;
+    fr_write_block = f_write(&fil, all_points_buffer, current_buffer_pos, &bytes_written);
+    if (fr_write_block != FR_OK || bytes_written != current_buffer_pos) {
+        printf("Error: No se pudieron escribir todos los puntos en '%s'. Codigo FatFs: %d\r\n", filename, fr_write_block);
+        final_res = fr_write_block;
+        goto cleanup_sine;
     }
 
-    // --- 4. Escribir la segunda línea en el mismo archivo ---
+    // --- 4. Escribe la segunda línea en el mismo archivo ---
     char second_line_data[] = "Datos adicionales del experimento.\n";
-    fr = f_write(&fil, second_line_data, strlen(second_line_data), &bytes_written);
-    if (fr != FR_OK || bytes_written < strlen(second_line_data)) {
-        printf("Error: No se pudo escribir la segunda línea en '%s'. Codigo FatFs: %d\r\n", filename, fr);
-        f_close(&fil);
-        return fr;
+    fr_write_block = f_write(&fil, second_line_data, strlen(second_line_data), &bytes_written);
+    if (fr_write_block != FR_OK || bytes_written < strlen(second_line_data)) {
+        printf("Error: No se pudo escribir la segunda línea en '%s'. Codigo FatFs: %d\r\n", filename, fr_write_block);
+        final_res = fr_write_block;
+        goto cleanup_sine;
     }
 
-    // --- 5. Cerrar el archivo ---
-    fr = f_close(&fil);
-    if (fr != FR_OK) {
-        printf("Error: No se pudo cerrar el archivo '%s'. Codigo FatFs: %d\r\r\n", filename, fr);
-        return fr;
+cleanup_sine: // Etiqueta para la limpieza
+    // --- 5. Cierra el archivo ---
+    fr_close = f_close(&fil);
+    if (fr_close != FR_OK) {
+        printf("Error: No se pudo cerrar el archivo '%s'. Codigo FatFs: %d\r\r\n", filename, fr_close);
+        if (final_res == FR_OK) { // Solo sobrescribe final_res si no hubo otro error
+            final_res = fr_close;
+        }
     }
 
-    printf("Sinusoidal data (single row) and additional line successfully saved to '%s'\r\n", filename);
-    return FR_OK; // Indicate success
+    if (final_res == FR_OK) {
+        printf("Datos sinusoidales (fila única) y línea adicional guardados exitosamente en '%s'.\r\r\n", filename);
+    }
+    return final_res;
 }
 
-// --- NEW FUNCTION: write_magnitudes_to_sd ---
 /**
-  * @brief Writes magnitude array values to a CSV file on SD.
-  * Formats each float and writes to the file in 512-byte blocks.
-  * Opens the file in append mode to avoid overwriting previous data.
-  * @param filename Name of the CSV file on SD (e.g., "0:/magnitudes.csv")
-  * @param magnitudes_array Pointer to the float array with magnitudes.
-  * @param num_magnitudes Number of elements in the magnitudes_array.
-  * @retval FRESULT FatFs operation result code.
+  * @brief Escribe los valores de un arreglo de magnitudes en un archivo CSV en la SD.
+  * Formatea cada flotante y escribe en el archivo en bloques de 512 bytes.
+  * El modo de apertura (crear o añadir) es controlado por el parámetro is_new_file.
+  * @param filename Nombre del CSV en la SD (ej: "0:/DATA/magnitudes.csv")
+  * @param magnitudes_array Puntero al arreglo de flotantes con las magnitudes.
+  * @param num_magnitudes Número de elementos en el arreglo magnitudes_array.
+  * @param is_new_file Booleano. Si es true, abre en FA_CREATE_ALWAYS. Si es false, abre en FA_OPEN_APPEND.
+  * @retval FRESULT Código de resultado de la operación FatFs.
   */
-FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array, uint16_t num_magnitudes, int is_new_file) {
-	    FIL fil;
-	    FRESULT res; // Consolidar variables de resultado
-	    UINT bytes_written;
+FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array, uint16_t num_magnitudes, bool is_new_file) {
+    FIL fil;
+    FRESULT res; // Consolidar variables de resultado
+    UINT bytes_written;
+    
+    char write_buffer[512 + 1]; // Buffer para acumular datos formateados antes de escribir. +1 para el terminador nulo.
+    int current_buffer_pos = 0; // Posición actual de escritura en el buffer.
+    write_buffer[0] = '\0'; // ¡IMPORTANTE!: Inicializa el buffer como una cadena vacía al inicio.
 
-	    char write_buffer[512 + 1]; // Buffer para acumular datos formateados antes de escribir. +1 para el terminador nulo.
-	    int current_buffer_pos = 0; // Posición actual de escritura en el buffer.
-	    write_buffer[0] = '\0'; // ¡IMPORTANTE!: Inicializa el buffer como una cadena vacía al inicio.
-
-	    // Determina el modo de apertura basado en is_new_file
-	    BYTE open_mode = FA_WRITE | (is_new_file ? FA_CREATE_ALWAYS : FA_OPEN_APPEND);
+    // Determina el modo de apertura basado en is_new_file
+    BYTE open_mode = FA_WRITE | (is_new_file ? FA_CREATE_ALWAYS : FA_OPEN_APPEND);
 
 #ifdef comments
-	    printf("Attempting to open file '%s' with mode %s...\r\n", filename, is_new_file ? "CREATE_ALWAYS" : "APPEND"); // Diagnóstico
+    printf("Attempting to open file '%s' with mode %s...\r\n", filename, is_new_file ? "CREATE_ALWAYS" : "APPEND"); // Diagnóstico
 #endif
-	    res = f_open(&fil, filename, open_mode);
-	    if (res != FR_OK) {
-	        printf("Error: f_open failed for '%s'. FatFs Code: %d\r\n", filename, res); // Error más específico
-	        return res; // Retorna directamente si la apertura falla, no hay archivo que cerrar.
-	    }
-	    printf("File '%s' opened successfully (f_open result: %d).\r\n", filename, res); // Diagnóstico
+    res = f_open(&fil, filename, open_mode);
+    if (res != FR_OK) {
+        printf("Error: f_open failed for '%s'. FatFs Code: %d\r\n", filename, res); // Error más específico
+        return res; // Retorna directamente si la apertura falla, no hay archivo que cerrar.
+    }
+    printf("File '%s' opened successfully (f_open result: %d).\r\n", filename, res); // Diagnóstico
 
-	    // Itera sobre las magnitudes, formatea y acumula en el buffer.
-	    for (uint16_t i = 0; i < num_magnitudes; ++i) {
-	        char temp_val_str[20]; // Buffer temporal para un valor float formateado.
-	        int chars_formatted;
+    // Itera sobre las magnitudes, formatea y acumula en el buffer.
+    for (uint16_t i = 0; i < num_magnitudes; ++i) {
+        char temp_val_str[20]; // Buffer temporal para un valor float formateado.
+        int chars_formatted;    
 
-	        chars_formatted = snprintf(temp_val_str, sizeof(temp_val_str), "%.4f", magnitudes_array[i]);
+        chars_formatted = snprintf(temp_val_str, sizeof(temp_val_str), "%.4f", magnitudes_array[i]);
 
-	        // Calcula el espacio requerido en el write_buffer para el valor actual y una coma (si es necesaria).
-	        int required_space = strlen(temp_val_str) + (i < num_magnitudes - 1 ? 1 : 0);
+        // Calcula el espacio requerido en el write_buffer para el valor actual y una coma (si es necesaria).
+        int required_space = strlen(temp_val_str) + (i < num_magnitudes - 1 ? 1 : 0); 
 
-	        // Si añadir este valor excede el límite del bloque de escritura (512 bytes - margen),
-	        // escribe el contenido actual del buffer al archivo.
-	        if (current_buffer_pos + required_space >= sizeof(write_buffer) - 20) {
-	            res = f_write(&fil, write_buffer, current_buffer_pos, &bytes_written);
-	            if (res != FR_OK || bytes_written != current_buffer_pos) {
-	                printf("Error writing block (%d bytes) to file '%s'. FatFs Code: %d\r\n", current_buffer_pos, filename, res); // Diagnóstico
-	                goto cleanup; // Salta a la limpieza para asegurar que el archivo se cierre.
-	            }
-	            current_buffer_pos = 0; // Reinicia la posición del buffer.
-	            write_buffer[0] = '\0'; // Limpia el buffer para el siguiente bloque.
-	        }
+        // Si añadir este valor excede el límite del bloque de escritura (512 bytes - margen),
+        // escribe el contenido actual del buffer al archivo.
+        if (current_buffer_pos + required_space >= sizeof(write_buffer) - 40) { // Margen de 40 para seguridad extra
+            res = f_write(&fil, write_buffer, current_buffer_pos, &bytes_written);
+            if (res != FR_OK || bytes_written != current_buffer_pos) {
+                printf("Error writing block (%d bytes) to file '%s'. FatFs Code: %d\r\n", current_buffer_pos, filename, res); // Diagnóstico
+                goto cleanup; // Salta a la limpieza para asegurar que el archivo se cierre.
+            }
+            current_buffer_pos = 0; // Reinicia la posición del buffer.
+            write_buffer[0] = '\0'; // Limpia el buffer para el siguiente bloque.
+        }
 
-	        // Añade el valor formateado al buffer de escritura usando snprintf para seguridad.
-	        current_buffer_pos += snprintf(&write_buffer[current_buffer_pos], sizeof(write_buffer) - current_buffer_pos, "%s", temp_val_str);
+        // Añade el valor formateado al buffer de escritura usando snprintf para seguridad.
+        current_buffer_pos += snprintf(&write_buffer[current_buffer_pos], sizeof(write_buffer) - current_buffer_pos, "%s", temp_val_str);
 
-	        // Añade una coma si no es el último valor de todo el arreglo de magnitudes.
-	        if (i < num_magnitudes - 1) {
-	            current_buffer_pos += snprintf(&write_buffer[current_buffer_pos], sizeof(write_buffer) - current_buffer_pos, ",");
-	        }
-	    }
+        // Añade una coma si no es el último valor de todo el arreglo de magnitudes.
+        if (i < num_magnitudes - 1) {
+            current_buffer_pos += snprintf(&write_buffer[current_buffer_pos], sizeof(write_buffer) - current_buffer_pos, ",");
+        }
+    }
 
-	    // Después de procesar todos los valores, escribe cualquier dato restante en el buffer.
-	    // Luego, añade un salto de línea al final de esta "fila" de magnitudes para el CSV.
-	    if (current_buffer_pos > 0) {
-	        current_buffer_pos += snprintf(&write_buffer[current_buffer_pos], sizeof(write_buffer) - current_buffer_pos, "\n");
+    // Después de procesar todos los valores, escribe cualquier dato restante en el buffer.
+    // Luego, añade un salto de línea al final de esta "fila" de magnitudes para el CSV.
+    if (current_buffer_pos > 0) {
+        current_buffer_pos += snprintf(&write_buffer[current_buffer_pos], sizeof(write_buffer) - current_buffer_pos, "\n"); 
 
-	        res = f_write(&fil, write_buffer, current_buffer_pos, &bytes_written);
-	        if (res != FR_OK || bytes_written != current_buffer_pos) {
-	            printf("Error writing final block (%d bytes) to file '%s'. FatFs Code: %d\r\n", current_buffer_pos, filename, res); // Diagnóstico
-	            // No hay necesidad de goto aquí, naturalmente caerá en la limpieza
-	        }
-	    }
+        res = f_write(&fil, write_buffer, current_buffer_pos, &bytes_written);
+        if (res != FR_OK || bytes_written != current_buffer_pos) {
+            printf("Error writing final block (%d bytes) to file '%s'. FatFs Code: %d\r\n", current_buffer_pos, filename, res); // Diagnóstico
+            // No hay necesidad de goto aquí, naturalmente caerá en la limpieza
+        }
+    }
 
-	cleanup: // Etiqueta para la limpieza
-	    // Intenta sincronizar los datos del archivo con el disco antes de cerrar (puede ayudar con la consistencia).
-	    FRESULT sync_res = f_sync(&fil);
-	    if (sync_res != FR_OK) {
-	        printf("Warning: f_sync failed for file '%s'. FatFs Code: %d\r\n", filename, sync_res); // Diagnóstico
-	        if (res == FR_OK) { // Si no ocurrió ningún otro error, este es el problema principal
-	            res = sync_res;
-	        }
-	    }
+cleanup: // Etiqueta para la limpieza
+    // Intenta sincronizar los datos del archivo con el disco antes de cerrar (puede ayudar con la consistencia).
+    FRESULT sync_res = f_sync(&fil);
+    if (sync_res != FR_OK) {
+        printf("Warning: f_sync failed for file '%s'. FatFs Code: %d\r\n", filename, sync_res); // Diagnóstico
+        if (res == FR_OK) { // Si no ocurrió ningún otro error, este es el problema principal
+            res = sync_res;
+        }
+    }
 
-	    FRESULT close_res = f_close(&fil); // Cierra el archivo.
-	    if (close_res != FR_OK) {
-	        printf("Error: No se pudo cerrar el archivo '%s'. Codigo FatFs: %d\r\r\n", filename, close_res);
-	        if (res == FR_OK) { // Solo sobrescribe el resultado final si no hubo otro error.
-	            res = close_res;
-	        }
-	    }
+    FRESULT close_res = f_close(&fil); // Cierra el archivo.
+    if (close_res != FR_OK) {
+        printf("Error: Could not close file '%s'. FatFs Code: %d\r\r\n", filename, close_res);
+        if (res == FR_OK) { // Solo sobrescribe el resultado final si no hubo otro error.
+            res = close_res;
+        }
+    }
 
-	    if (res == FR_OK) {
+    if (res == FR_OK) {
 #ifdef comments
-	        printf("Magnitude data successfully saved to '%s'.\r\r\n", filename);
+        printf("Magnitude data successfully saved to '%s'.\r\r\n", filename);
 #endif
-	    }
-	    return res;
-	}
+    }
+    return res; 
+}
 
 // --- END NEW FUNCTION ---
 

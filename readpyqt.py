@@ -15,7 +15,7 @@ class FFTViewer(QMainWindow):
         self.setGeometry(100, 100, 1000, 700)
         self.setWindowIcon(QIcon(self.style().standardIcon(QStyle.SP_ComputerIcon))) # Generic icon
 
-        self.filename = 'magnitudes.csv'  # Default filename
+        self.filename = 'magnitudes_combinadas.csv'  # Default filename
         self.fs = 6660  # Sampling frequency (Hz)
         self.fft_points = 4096  # Number of FFT points used in STM32
         self.num_magnitudes = int(self.fft_points / 2 + 1)
@@ -221,10 +221,10 @@ class FFTViewer(QMainWindow):
 # --- Main application execution ---
 if __name__ == '__main__':
     # Create a dummy magnitudes.csv for testing if it doesn't exist
-    if not os.path.exists('magnitudes.csv'):
-        print("Creating a dummy 'magnitudes.csv' for demonstration.")
+    if not os.path.exists('magnitudes_combinadas.csv'):
+        print("Creating a dummy 'magnitudes_combinadas.csv' for demonstration.")
         dummy_data = np.random.rand(100, 2049) * 100 # 100 frames, 2049 magnitudes
-        pd.DataFrame(dummy_data).to_csv('magnitudes.csv', header=False, index=False)
+        pd.DataFrame(dummy_data).to_csv('magnitudes_combinadas.csv', header=False, index=False)
         print("Dummy file created. You can replace it with your actual data.")
 
     app = QApplication(sys.argv)

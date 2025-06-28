@@ -1,0 +1,41 @@
+17:02:50 **** Incremental Build of configuration Debug for project proyecto_1_sindma ****
+make -j4 all 
+arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g3 -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -I../X-CUBE-MEMS1/Target -I../Drivers/STM32L4xx_HAL_Driver/Inc -I../Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -I../Middlewares/Third_Party/FatFs/src -I../Drivers/CMSIS/Device/ST/STM32L4xx/Include -I../Drivers/CMSIS/Include -I../Drivers/BSP/Components/lsm6dsl -I../Middlewares/ST/ARM/DSP/Inc -O0 -ffunction-sections -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
+../Core/Src/main.c: In function 'MEMS_Init_SPI_FIFO_Int':
+../Core/Src/main.c:577:21: warning: assignment to 'LSM6DSL_WriteReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  577 |     io_ctx.WriteReg = SPI_Send;
+      |                     ^
+../Core/Src/main.c:578:20: warning: assignment to 'LSM6DSL_ReadReg_Func' {aka 'long int (*)(short unsigned int,  short unsigned int,  unsigned char *, short unsigned int)'} from incompatible pointer type 'int32_t (*)(void *, uint8_t,  uint8_t *, uint16_t)' {aka 'long int (*)(void *, unsigned char,  unsigned char *, short unsigned int)'} [-Wincompatible-pointer-types]
+  578 |     io_ctx.ReadReg = SPI_Recv;
+      |                    ^
+../Core/Src/main.c:569:11: warning: unused variable 'sens_a' [-Wunused-variable]
+  569 |     float sens_a;
+      |           ^~~~~~
+../Core/Src/main.c: In function 'Process_FIFO_Data_Polling':
+../Core/Src/main.c:732:54: warning: format '%lu' expects a matching 'long unsigned int' argument [-Wformat=]
+  732 |     printf("Polling SPI Completed in (%lu ticks = ~%lu us)....\r\r\n", time_us); // Mensaje actualizado
+      |                                                    ~~^
+      |                                                      |
+      |                                                      long unsigned int
+../Core/Src/main.c: In function 'write_magnitudes_to_sd':
+../Core/Src/main.c:975:13: warning: variable 'chars_formatted' set but not used [-Wunused-but-set-variable]
+  975 |         int chars_formatted;
+      |             ^~~~~~~~~~~~~~~
+../Core/Src/main.c: At top level:
+../Core/Src/main.c:156:16: warning: 'sd_transfer_start' defined but not used [-Wunused-variable]
+  156 | static uint8_t sd_transfer_start = 0; // Not used in no-DMA version
+      |                ^~~~~~~~~~~~~~~~~
+arm-none-eabi-gcc -o "proyecto_1_sindma.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1_sindma\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1_sindma.map" -Wl,--gc-sections -static -L../Middlewares/ST/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Finished building target: proyecto_1_sindma.elf
+ 
+arm-none-eabi-size  proyecto_1_sindma.elf 
+arm-none-eabi-objdump -h -S proyecto_1_sindma.elf  > "proyecto_1_sindma.list"
+   text	   data	    bss	    dec	    hex	filename
+ 205436	    492	  86180	 292108	  4750c	proyecto_1_sindma.elf
+Finished building: default.size.stdout
+ 
+Finished building: proyecto_1_sindma.list
+ 
+
+17:02:56 Build Finished. 0 errors, 6 warnings. (took 5s.644ms)
+

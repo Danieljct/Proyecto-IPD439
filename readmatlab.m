@@ -52,8 +52,7 @@ pause_duration = 0.05; % Duración de la pausa entre cada frame (segundos)
 
 for i = 1:size(datos_magnitudes, 1)
     % Actualiza los datos del plot con la fila actual
-    i
-    ylim_max = max(datos_magnitudes(i,30:end)) * 1.1; % Un poco más del máximo para margen
+    ylim_max = 1500;% max(datos_magnitudes(i,30:end)) * 1.1; % Un poco más del máximo para margen
     ylim([0 ylim_max]); % Siempre desde 0 hasta el máximo global
     set(h_plot, 'YData', datos_magnitudes(i, :));
     title(sprintf('Magnitudes de la FFT (Conjunto %d/%d)', i, size(datos_magnitudes, 1)));

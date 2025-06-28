@@ -3,21 +3,21 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
-		<item value="MiFatFs"/>
-		<item value="write_magnitudes_to_sd"/>
-		<item value="END"/>
-		<item value="DMA:"/>
-		<item value="START:"/>
-		<item value="START"/>
+		<item value="magnitudes"/>
+		<item value="sd_transfer_start"/>
+		<item value="memtomem"/>
 		<item value="new_fft_data_complete"/>
-		<item value="startfft"/>
 		<item value="finish"/>
-		<item value="HAL_TIM_Base_Start_IT(&amp;htim5);"/>
-		<item value="HAL_TIM_Base_Stop_IT(&amp;htim5);"/>
-		<item value="htim5"/>
-		<item value="dma"/>
-		<item value="send_uart"/>
-		<item value="uart_tra"/>
+		<item value="magnitude_file_idx"/>
+		<item value="callback"/>
+		<item value="printf"/>
+		<item value="data/"/>
+		<item value="create_new_file_mode"/>
+		<item value="data/mage"/>
+		<item value="data"/>
+		<item value="generate"/>
+		<item value="2047"/>
+		<item value="2048"/>
 	</list>
 	<list key="replacehistory">
 		<item value="//printf"/>

@@ -74,7 +74,7 @@
 
 #define fft_points 4096
 #define NUM_MUESTRAS 682
-#define LINES_PER_MAG_FILE 3
+#define LINES_PER_MAG_FILE 10
 //#define comments
 /* USER CODE END PD */
 
@@ -102,7 +102,7 @@ float32_t mg_x_values[NUM_MUESTRAS]; // Sufficient size
 
 float32_t fft_z[fft_points];
 float32_t magnitudes[fft_points/2 + 1];
-float32_t magnitudesssd[fft_points/2 + 1];
+float32_t magnitudesssd[fft_points/2 + 1] = {0};
 float32_t fft_in[fft_points] = {0};
 float32_t fft_in2[fft_points];
 int counterzzz= 0;
@@ -131,6 +131,7 @@ uint16_t last_dma_read_bytes = 0; // Para saber cuántos bytes procesar
 FRESULT generate_sine_to_csv(const char* filename, double amplitude, double frequency, double duration, int num_points);
 FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array, uint16_t num_magnitudes, int is_new_file);// Added prototype for new function
 static uint8_t new_fft_data_complete = 0; // Flag to indicate a full set of FFT data is ready for writing
+static uint8_t sd_transfer_start = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -151,6 +152,10 @@ void HAL_DMA_Callback(DMA_HandleTypeDef *hdma){
 #endif
 	if(hdma -> Instance == DMA1_Channel1){
 		difftime = TIM2->CNT - time;
+		if(sd_transfer_start){
+			new_fft_data_complete = 1; // Flag that a full FFT buffer is ready
+			sd_transfer_start = 0;
+		}
 		if(movefft){
 			movefft = 0;
 			HAL_DMA_Start_IT(&hdma_memtomem_dma1_channel1, fft_in, fft_in2, fft_points);
@@ -249,63 +254,11 @@ int main(void)
   printf("Starting\r\n");
 
       char MiSdPath[4]; // Ruta ej: "0:/"
-
       // Attempt to mount the SD card
       FRESULT mount_res = f_mount(&fs, MiSdPath, 1);
       if (mount_res == FR_OK) {
    	   printf("SD montada....\r\n");
-
-
-      /*
-          // Check free space after mounting to diagnose card health/write-protect
-          DWORD free_clusters;
-          FATFS* filesystem_obj;
-          FRESULT getfree_res = f_getfree(MiSdPath, &free_clusters, &filesystem_obj);
-          if (getfree_res == FR_OK) {
-              total = (filesystem_obj->n_fatent - 2) * filesystem_obj->csize / 2; // Total KB
-              free_space = free_clusters * filesystem_obj->csize / 2; // Free KB
-              printf("SD Card: Total space: %luKB, Free space: %luKB\r\n", total, free_space);
-          } else {
-              printf("Error al obtener espacio libre de la SD Card. Codigo FatFs: %d\r\n", getfree_res);
-              // This often indicates a deeper issue than just a file not found, even if mount succeeded.
-          }
-
-          // --- NEW: Try creating a subdirectory first ---
-          const char* data_dir = "0:/DATA";
-          FRESULT mkdir_res = f_mkdir(data_dir);
-          if (mkdir_res == FR_OK) {
-              printf("Directorio '%s' creado exitosamente o ya existe.\r\n", data_dir);
-          } else if (mkdir_res == FR_EXIST) {
-              printf("Directorio '%s' ya existe. No es necesario crearlo.\r\n", data_dir);
-          } else {
-              printf("Error al crear directorio '%s'. Codigo FatFs: %d\r\n", data_dir, mkdir_res);
-              // If directory creation fails, it's unlikely file creation will succeed.
-              // We could exit here or try anyway for more debug info.
-          }
-
-          // Call the function to generate the file, now inside the DATA directory
-          FRESULT res_sine = generate_sine_to_csv(
-                              "0:/DATA/sin1.csv", // File name on SD, now in DATA folder
-                              5.0,                // Amplitude = 5.0
-                              2.0,                // Frequency = 2 Hz (2 cycles per second)
-                              3.0,                // Duration = 3 seconds
-                              4                 // Number of points = 150 (will generate 150 points in 3 sec)
-                          );
-          if (res_sine == FR_OK) {
-       	   printf("Archivo CSV 'sin1.csv' generado con éxito en /DATA.\r\n");
-          } else {
-       	   printf("Fallo al generar el archivo CSV 'sin1.csv'. Codigo FatFs: %d\r\n", res_sine); // Print detailed error
-          }
-
-          // Also update the magnitudes file path
-          // Note: The write_magnitudes_to_sd call is in HAL_TIM_PeriodElapsedCallback (TIM4),
-          // so ensure that the filename there also points to "0:/DATA/magnitudes.csv"
-          printf("La escritura de magnitudes intentará usar '0:/DATA/magnitudes.csv'.\r\n");
-
-          // Opcional: desmontar la unidad si ya no se necesita
-          f_mount(NULL, MiSdPath, 0);
-
-      */} else {
+    } else {
    	   printf("Error al montar la SD Card. Codigo FatFs: %d\r\n", mount_res); // Print detailed error for mount
       }
 
@@ -335,37 +288,6 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-	 /* if (fifo_int_triggered)
-	      {
-	          fifo_int_triggered = 0; // Resetear flag de INT1
-	          // Solo iniciar DMA si no hay otra transferencia o error pendiente
-	          if (!spi_dma_transfer_complete && !spi_dma_transfer_error) {
-	               Start_FIFO_Read_DMA(); // Iniciar lectura DMA
-	          } else {
-	               printf("WARN: Int. FIFO pero DMA aún activo o error.\n");
-	          }
-
-	      }
-*/
-	      // Chequear si una transferencia DMA terminó (opcional si procesas en callback)
-	     /* if (spi_dma_transfer_complete) {
-
-#ifdef comments
-	          printf("DMA Completado OK.\n");
-#endif
-
-
-
-	          // Procesar datos leídos que están en dma_rx_buffer
-	          //Process_FIFO_Data_DMA(last_dma_read_bytes + 1); // +1 por byte dummy
-
-	          // Resetear FIFO aquí (fuera del callback es más seguro)
-#ifdef comments
-	          printf("Reseteando FIFO post-DMA...\r\n");
-#endif
-
-	      }
-*/
       // --- NEW: Write magnitudes to SD if a full set is complete ---
       if (new_fft_data_complete) {
           printf("Writing magnitudes to SD...\r\n");
@@ -386,11 +308,10 @@ int main(void)
 
           do {
               // Pasa el modo de apertura a la función write_magnitudes_to_sd
+             // Copiar magnitudes a magnitudesssd
               res = write_magnitudes_to_sd(current_magnitudes_filename, magnitudes, fft_points/2 + 1, create_new_file_mode);
 
               if (res == FR_OK) {
-                  printf("Magnitudes written successfully to '%s' (line %d). Total for file: %d.\r\r\n",
-                         current_magnitudes_filename, lines_in_current_file_counter + 1, lines_in_current_file_counter + 1);
                   write_succeeded = 1;
                   lines_in_current_file_counter++; // Incrementa el contador de línea si la escritura es exitosa
               } else {
@@ -778,26 +699,6 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
     }
 
 
-    /*float32_t fft_in[fft_points] = {0};
-    memcpy(fft_in, mg_z_values, sizeof(mg_z_values)/2);
-#ifdef comments
-    printf("--- Fin Procesamiento DMA ---\r\n");
-#endif
-    arm_rfft_fast_f32(&fft_instance,fft_in,fft_z, 0);
-    // Calcular DC y Nyquist por separado
-    magnitudes[0] = fabsf(fft_z[0]);
-    #if (fft_points % 2 == 0) // Si N es par, hay componente Nyquist
-    	magnitudes[fft_points/2] = fabsf(fft_z[1]);
-    #endif
-    arm_cmplx_mag_f32(&fft_z[2], &magnitudes[1], (fft_points - 2) / 2);
-
-    printf("DMA x:");
-    for (int i = 0; i < fft_points/2+1; i++) {
-        printf("%.0f ", magnitudes[i]);
-    }*/
-
-
-
 }
 extern uint8_t spiDmaTransferComplete;
 
@@ -806,7 +707,7 @@ void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
     if(hspi->Instance == SPI3) // Verificar que es la interrupción de SPI3
     {
 #ifdef comments
-    	printf("(%.1f) SPI3 Callback\n",(TIM2->CNT)/80.0);}
+    	printf("(%.1f) SPI3 Callback\n",(TIM2->CNT)/80.0);
 #endif
     	difftime = TIM2->CNT - time;
         GPIOA->BSRR = GPIO_PIN_1 ; // <<< CS ALTO aquí
@@ -831,12 +732,6 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
         lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
         spi_dma_transfer_complete = 0; // No se completó bien
 
-        // Intentar resetear FIFO
-        // lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
-        // HAL_Delay(1); // CUIDADO
-        // lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_STREAM_MODE);
-
-        // Podrías querer llamar a Error_Handler() o intentar recuperar
      }
 }
 
@@ -895,7 +790,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
         #endif
         arm_cmplx_mag_f32(&fft_z[2], &magnitudes[1], (fft_points - 2) / 2);
         int tiempofft =  TIM2->CNT -STARTtiempofft;
+#ifdef comments
         printf("FFT tiempo: %.4f ms\n", tiempofft/80000.0);
+#endif
         //const char* header = "DMA x:";
        // HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
 
@@ -1119,7 +1016,9 @@ FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array
 	    }
 
 	    if (res == FR_OK) {
+#ifdef comments
 	        printf("Magnitude data successfully saved to '%s'.\r\r\n", filename);
+#endif
 	    }
 	    return res;
 	}

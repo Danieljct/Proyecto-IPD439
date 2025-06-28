@@ -59,7 +59,7 @@
 #define FIFO_MAX_SETS       (FIFO_MAX_WORDS / ACCEL_WORDS_PER_SET) // Max sets (~682)
 
 // --- Tamaño del buffer de lectura local ---
-// Leer chunks más pequeños puede ayudar a evitar bloqueos largos
+// Leer chunks más pequeños pueden ayudar a evitar bloqueos largos
 // Ajusta según la memoria disponible y la velocidad de procesamiento
 // Un valor entre 256 y 1024 podría ser un buen punto de partida.
 #define READ_BUFFER_BYTES   4096 // Leer hasta 512 bytes (~85 sets) a la vez
@@ -75,7 +75,7 @@
 
 #define fft_points 4096
 #define NUM_MUESTRAS 682
-#define LINES_PER_MAG_FILE 5 // NEW: Número de líneas a escribir por archivo de magnitudes
+#define LINES_PER_MAG_FILE 10 // NEW: Número de líneas a escribir por archivo de magnitudes
 //#define comments
 /* USER CODE END PD */
 
@@ -91,9 +91,9 @@ extern SPI_HandleTypeDef hspi3;
 arm_rfft_fast_instance_f32 fft_instance;
 uint8_t full_fifo_buffer[FIFO_MAX_BYTES];
 uint8_t fifo_chunk_buffer[READ_BUFFER_BYTES];
-//int32_t raw_x_values[NUM_MUESTRAS]; // Sufficient size
+int32_t raw_x_values[NUM_MUESTRAS]; // Sufficient size
 //int32_t raw_y_values[NUM_MUESTRAS];
-int32_t raw_z_values[NUM_MUESTRAS];
+//int32_t raw_z_values[NUM_MUESTRAS];
 
 // Buffers para valores CONVERTIDOS a mg (almacenados en 32 bits)
 float32_t mg_x_values[NUM_MUESTRAS]; // Sufficient size
@@ -103,10 +103,7 @@ float32_t mg_x_values[NUM_MUESTRAS]; // Sufficient size
 
 float32_t fft_z[fft_points];
 float32_t magnitudes[fft_points/2 + 1];
-float32_t magnitudesssd0[fft_points/2+1];
-// Reintroducción de magnitudesssd con alineación explícita.
-// Esta copia es necesaria para evitar problemas de race condition con 'magnitudes'.
-
+float32_t magnitudesssd0[fft_points/2+1] __attribute__((aligned(4))) = {0}; // Alineado
 float32_t fft_in[fft_points] = {0};
 float32_t fft_in2[fft_points];
 int counterzzz= 0;
@@ -117,6 +114,8 @@ static int magnitude_file_idx = 0; // Índice para el nombre del archivo de magn
 char current_magnitudes_filename[50]; // Buffer para construir el nombre del archivo actual
 static int lines_in_current_file_counter = 0; // Contador de líneas escritas en el archivo actual
 
+// NEW: Semáforo para controlar el acceso a la escritura en SD
+volatile bool sd_write_in_progress = false;
 
 float cached_acc_sensitivity = 0.0f; // Cache sensitivity
 LSM6DSL_Object_t MotionSensor;
@@ -297,7 +296,9 @@ int main(void)
 
     /* USER CODE BEGIN 3 */
       // --- NEW: Write magnitudes to SD if a full set is complete ---
-      if (new_fft_data_complete) {
+      // Solo intenta escribir si hay nuevos datos de FFT Y la SD no está ocupada con otra escritura.
+      if (new_fft_data_complete && !sd_write_in_progress) {
+          sd_write_in_progress = true; // Establece la bandera: SD está ocupada
           printf("Writing magnitudes to SD...\r\n");
 
           // Construir el nombre del archivo dinámicamente
@@ -341,7 +342,7 @@ int main(void)
                   } else { 
                       printf("Error unmounting SD Card. FatFs Code: %d\r\n", unmount_res); 
                   }
-                  //HAL_Delay(100); // Pequeña pausa para estabilización
+                  HAL_Delay(100); // Pequeña pausa para estabilización
                   FRESULT mount_res_retry = f_mount(&fs, MiSdPath, 1); // Montar de nuevo
                   if (mount_res_retry == FR_OK) { 
                       printf("SD Card remounted successfully.\r\n"); 
@@ -375,6 +376,7 @@ int main(void)
               lines_in_current_file_counter = 0; // Reinicia el contador de línea para el nuevo archivo
           }
           new_fft_data_complete = 0; // Resetear bandera después de procesar
+          sd_write_in_progress = false; // Desactiva la bandera: SD está libre
       }
       // --- END NEW ---
 	  	  counterzzz++;
@@ -615,7 +617,7 @@ static void Start_FIFO_Read_DMA(void)
         bytes_to_read = FIFO_MAX_BYTES;
     }
 #ifdef comments
-    printf("INT DMA! Leyendo %u palabras (%u bytes)...\r\n", num_words_available, bytes_to_read);
+    printf("INT DMA! Leyendo %u palabras (%u bytes)....\r\n", num_words_available, bytes_to_read);
 #endif
     last_dma_read_bytes = bytes_to_read; // Guardar para el callback
 
@@ -648,9 +650,9 @@ static void Start_FIFO_Read_DMA(void)
     	time = TIM2->CNT;
         uint32_t time_us = difftime / 80;
 #ifdef comments
-        printf("DMA iniciado (%lu ticks = ~%lu us)\r\n", difftime, time_us);
+        printf("DMA iniciado (%lu ticks = ~%lu us)....\r\r\n", difftime, time_us);
 #endif
-        // El CS se pondrá en ALTO en el callback de completado o error
+        // CS se pondrá en ALTO en el callback de completado o error
     }
    // HAL_TIM_Base_Start_IT(&htim5);
 }
@@ -663,7 +665,7 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
 {
     uint32_t time_us = difftime / 80;
 #ifdef comments
-    printf("DMA Completado en (%lu ticks = ~%lu us)\r\n", difftime, time_us);
+    printf("DMA Completado en (%lu ticks = ~%lu us)....\r\r\n", time_us);
 #endif
 
     if (cached_acc_sensitivity == 0.0f || bytes_received_incl_dummy <= 1) return;
@@ -680,23 +682,23 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
 
             // --- Extract Raw 16-bit Values and Store in 32-bit Buffers ---
             // X (LSB in pSampleBytes[0], MSB in pSampleBytes[1])
-            //raw_x_values[i] = (int16_t)(((uint16_t)pSampleBytes[1] << 8) | pSampleBytes[0]);
+            raw_x_values[i] = (int16_t)(((uint16_t)pSampleBytes[1] << 8) | pSampleBytes[0]);
 
             // Y (LSB in pSampleBytes[2], MSB in pSampleBytes[3])
             //raw_y_values[i] = (int16_t)(((uint16_t)pSampleBytes[3] << 8) | pSampleBytes[2]);
 
             // Z (LSB in pSampleBytes[4], MSB in pSampleBytes[5])
-            raw_z_values[i] = (int16_t)(((uint16_t)pSampleBytes[5] << 8) | pSampleBytes[4]);
+           // raw_z_values[i] = (int16_t)(((uint16_t)pSampleBytes[5] << 8) | pSampleBytes[4]);
 
             // --- Convert Raw Values to mg and Store in 32-bit Buffers ---
-            mg_x_values[i] = (float32_t)((float)raw_z_values[i] * cached_acc_sensitivity);
+            mg_x_values[i] = (float32_t)((float)raw_x_values[i] * cached_acc_sensitivity);
          //   mg_y_values[i] = (float32_t)((float)raw_y_values[i] * cached_acc_sensitivity);
          //   mg_z_values[i] = (float32_t)((float)raw_z_values[i] * cached_acc_sensitivity);
 
 
             // --- Optional: Print for first/last few samples (like in user's snippet) ---
           //  if (i < 5 || i >= (sets_leidos - 5)) {
-          //      printf(" Set[%3u]: Ax = %f mg, Ay = %5f mg, Az = %5f mg\r\n",
+          //      printf(" Set[%3u]: Ax = %f mg, Ay = %5f mg, Az = %5f mg\r\r\n",
           //             i, mg_x_values[i], mg_y_values[i], mg_z_values[i]);
           //  }
 
@@ -716,9 +718,8 @@ static void Process_FIFO_Data_DMA(uint16_t bytes_received_incl_dummy)
         new_fft_data_complete = 1; // Flag that a full FFT buffer is ready
         current_accumulated_sets = 0; // Reset for next accumulation cycle
     }
-
-
 }
+
 extern uint8_t spiDmaTransferComplete;
 
 void HAL_SPI_TxRxCpltCallback(SPI_HandleTypeDef *hspi)
@@ -746,7 +747,7 @@ void HAL_SPI_ErrorCallback(SPI_HandleTypeDef *hspi)
      if(hspi->Instance == SPI3)
      {
     	GPIOA->BSRR = GPIO_PIN_1 ; // <<< CS ALTO en error también
-        printf("!!! HAL_SPI_ErrorCallback - Error Code: 0x%lX !!!\r\n", hspi->ErrorCode);
+        printf("!!! HAL_SPI_ErrorCallback - Error Code: 0x%lX !!!\r\r\n", hspi->ErrorCode);
         spi_dma_transfer_error = 1; // Poner flag de error
         lsm6dsl_fifo_mode_set(&(MotionSensor.Ctx), LSM6DSL_BYPASS_MODE);
         spi_dma_transfer_complete = 0; // No se completó bien
@@ -779,12 +780,17 @@ void HAL_DAC_ConvCpltCallbackCh1(DAC_HandleTypeDef* hdac)
     HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 }
 
+/**
+  * @brief Callback del TIM5 (dispara lectura de FIFO).
+  * @param htim Puntero al handle del timer.
+  * @retval None
+  */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
   static int count = 0;
   if (htim->Instance == TIM5) {
 #ifdef comments
 	  printf("(%.1f) TIM5 Callback\n",(TIM2->CNT)/80.0);
-	  printf("TIM5 Periodo: %.1f us\r\n", (TIM2->CNT-count)/80.0f);
+	  printf("TIM5 Periodo: %.1f us\r\r\n", (TIM2->CNT-count)/80.0f);
 #endif
    // fifo_int_triggered = 1; // Poner el flag para el bucle principal
     HAL_TIM_Base_Stop_IT(&htim5); // Detener el timer
@@ -833,7 +839,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
         }
 
         for(int i = 0; i < fft_points/2 + 1; i++) {
-            dac_buffer[i] = (uint16_t)(magnitudes[i] / magintudmax * 4095.0); // Scale to 12 bits
+            dac_buffer[i] = (uint16_t)(magnitudes[i] / magintudmax * 4095.0); // Escalar a 12 bits
         }
 
 
@@ -981,7 +987,7 @@ FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array
     BYTE open_mode = FA_WRITE | (is_new_file ? FA_CREATE_ALWAYS : FA_OPEN_APPEND);
 
 #ifdef comments
-    printf("Attempting to open file '%s' with mode %s...\r\n", filename, is_new_file ? "CREATE_ALWAYS" : "APPEND"); // Diagnóstico
+    printf("Attempting to open file '%s' with mode %s....\r\n", filename, is_new_file ? "CREATE_ALWAYS" : "APPEND"); // Diagnóstico
 #endif
     res = f_open(&fil, filename, open_mode);
     if (res != FR_OK) {
@@ -989,7 +995,7 @@ FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array
         return res; // Retorna directamente si la apertura falla, no hay archivo que cerrar.
     }
 #ifdef comments
-    printf("File '%s' opened successfully (f_open result: %d).\r\n", filename, res); // Diagnóstico
+    printf("File '%s' opened successfully (f_open result: %d)....\r\n", filename, res); // Diagnóstico
 #endif
     // Itera sobre las magnitudes, formatea y acumula en el buffer.
     for (uint16_t i = 0; i < num_magnitudes; ++i) {
@@ -1083,7 +1089,7 @@ void Error_Handler(void)
 #ifdef  USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
-  *         where the assert_param error has occurred.
+  * where the assert_param error has occurred.
   * @param  file: pointer to the source file name
   * @param  line: assert_param error line source number
   * @retval None

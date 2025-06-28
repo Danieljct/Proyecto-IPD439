@@ -3,7 +3,14 @@
 	<item key="hasShownOverlayPopupBefore" value="true"/>
 	<item key="replaceBarOpen" value="false"/>
 	<list key="searchhistory">
+		<item value="counterzzz"/>
+		<item value="file &apos;"/>
 		<item value="magnitudes"/>
+		<item value="dma_tx_buffer"/>
+		<item value="fft_in"/>
+		<item value="fft_z"/>
+		<item value="raw_x_values"/>
+		<item value="INT DMA! Leyendo"/>
 		<item value="sd_transfer_start"/>
 		<item value="memtomem"/>
 		<item value="new_fft_data_complete"/>
@@ -11,13 +18,6 @@
 		<item value="magnitude_file_idx"/>
 		<item value="callback"/>
 		<item value="printf"/>
-		<item value="data/"/>
-		<item value="create_new_file_mode"/>
-		<item value="data/mage"/>
-		<item value="data"/>
-		<item value="generate"/>
-		<item value="2047"/>
-		<item value="2048"/>
 	</list>
 	<list key="replacehistory">
 		<item value="//printf"/>

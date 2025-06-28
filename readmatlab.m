@@ -1,7 +1,7 @@
 % MATLAB Script para visualizar magnitudes FFT desde un archivo CSV
 
 % --- Configuración ---
-nombreArchivo = 'magnitudes.csv'; % Asegúrate que esta ruta coincide con la de tu SD
+nombreArchivo = 'magnitudes_combinadas.csv'; % Asegúrate que esta ruta coincide con la de tu SD
 Fs = 6660;                                % Frecuencia de muestreo del acelerómetro (Hz)
 fft_points = 4096;                        % Número de puntos de la FFT utilizada en STM32
 
@@ -52,7 +52,7 @@ pause_duration = 0.05; % Duración de la pausa entre cada frame (segundos)
 
 for i = 1:size(datos_magnitudes, 1)
     % Actualiza los datos del plot con la fila actual
-    ylim_max = 1500;% max(datos_magnitudes(i,30:end)) * 1.1; % Un poco más del máximo para margen
+    ylim_max = 6000;% max(datos_magnitudes(i,30:end)) * 1.1; % Un poco más del máximo para margen
     ylim([0 ylim_max]); % Siempre desde 0 hasta el máximo global
     set(h_plot, 'YData', datos_magnitudes(i, :));
     title(sprintf('Magnitudes de la FFT (Conjunto %d/%d)', i, size(datos_magnitudes, 1)));
@@ -63,6 +63,33 @@ for i = 1:size(datos_magnitudes, 1)
 
 disp('Animación finalizada.');
 
-% --- Funciones Adicionales (Opcional) ---
-% Puedes añadir aquí funciones para guardar la animación como un GIF o video
-% si lo deseas, usando funciones como `imwrite` con la opción 'gif' o `VideoWriter`.
+% --- Guardar la animación como GIF ---
+gif_filename = 'fft_animacion.gif';
+disp(['Guardando animación como GIF: ' gif_filename]);
+
+figure;
+h_plot = plot(frecuencias, datos_magnitudes(1, :), 'b-');
+grid on;
+title('Magnitudes de la FFT (Animación Temporal)');
+xlabel('Frecuencia (Hz)');
+ylabel('Magnitud');
+xlim([0 Fs/2]);
+ylim_max = 6000;
+ylim([0 ylim_max]);
+
+for i = 1:size(datos_magnitudes, 1)
+    set(h_plot, 'YData', datos_magnitudes(i, :));
+    title(sprintf('Magnitudes de la FFT (Conjunto %d/%d)', i, size(datos_magnitudes, 1)));
+    drawnow;
+    
+    frame = getframe(gcf);
+    im = frame2im(frame);
+    [A,map] = rgb2ind(im,256);
+    if i == 1
+        imwrite(A,map,gif_filename,'gif','LoopCount',Inf,'DelayTime',pause_duration);
+    else
+        imwrite(A,map,gif_filename,'gif','WriteMode','append','DelayTime',pause_duration);
+    end
+end
+
+disp('GIF guardado exitosamente.');

@@ -75,7 +75,7 @@
 
 #define fft_points 4096
 #define NUM_MUESTRAS 682
-#define LINES_PER_MAG_FILE 10 // NEW: Número de líneas a escribir por archivo de magnitudes
+#define LINES_PER_MAG_FILE 5 // NEW: Número de líneas a escribir por archivo de magnitudes
 //#define comments
 /* USER CODE END PD */
 
@@ -325,8 +325,10 @@ int main(void)
               
 
               if (res == FR_OK) {
+#ifdef comments
                   printf("Magnitudes written successfully to '%s' (line %d). Total for file: %d.\r\r\n", 
                          current_magnitudes_filename, lines_in_current_file_counter + 1, lines_in_current_file_counter + 1);
+#endif
                   write_succeeded = true;
                   lines_in_current_file_counter++; // Incrementa el contador de línea si la escritura es exitosa
               } else {
@@ -339,7 +341,7 @@ int main(void)
                   } else { 
                       printf("Error unmounting SD Card. FatFs Code: %d\r\n", unmount_res); 
                   }
-                  HAL_Delay(100); // Pequeña pausa para estabilización
+                  //HAL_Delay(100); // Pequeña pausa para estabilización
                   FRESULT mount_res_retry = f_mount(&fs, MiSdPath, 1); // Montar de nuevo
                   if (mount_res_retry == FR_OK) { 
                       printf("SD Card remounted successfully.\r\n"); 
@@ -366,7 +368,9 @@ int main(void)
               magnitude_file_idx++; 
               lines_in_current_file_counter = 0; // Reinicia el contador de línea para el nuevo archivo
           } else if (lines_in_current_file_counter >= LINES_PER_MAG_FILE) { // Si se alcanzaron las 10 líneas
+#ifdef comments
               printf("%d lines written to '%s'. Moving to next file.\r\n", LINES_PER_MAG_FILE, current_magnitudes_filename);
+#endif
               magnitude_file_idx++;
               lines_in_current_file_counter = 0; // Reinicia el contador de línea para el nuevo archivo
           }
@@ -794,7 +798,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 	  HAL_TIM_Base_Stop_IT(&htim4);
 
       if(startfft && finish){
-  		  printf("counterzzz: %d\n",counterzzz);
+  		  printf("t: %d\n",counterzzz);
   		  counterzzz = 0;
         int STARTtiempofft = TIM2->CNT;
         arm_rfft_fast_f32(&fft_instance,fft_in2,fft_z, 0);
@@ -984,14 +988,15 @@ FRESULT write_magnitudes_to_sd(const char* filename, float32_t* magnitudes_array
         printf("Error: f_open failed for '%s'. FatFs Code: %d\r\n", filename, res); // Error más específico
         return res; // Retorna directamente si la apertura falla, no hay archivo que cerrar.
     }
+#ifdef comments
     printf("File '%s' opened successfully (f_open result: %d).\r\n", filename, res); // Diagnóstico
-
+#endif
     // Itera sobre las magnitudes, formatea y acumula en el buffer.
     for (uint16_t i = 0; i < num_magnitudes; ++i) {
         char temp_val_str[20]; // Buffer temporal para un valor float formateado.
         int chars_formatted;    
 
-        chars_formatted = snprintf(temp_val_str, sizeof(temp_val_str), "%.4f", magnitudes_array[i]);
+        chars_formatted = snprintf(temp_val_str, sizeof(temp_val_str), "%.0f", magnitudes_array[i]);
 
         // Calcula el espacio requerido en el write_buffer para el valor actual y una coma (si es necesaria).
         int required_space = strlen(temp_val_str) + (i < num_magnitudes - 1 ? 1 : 0); 

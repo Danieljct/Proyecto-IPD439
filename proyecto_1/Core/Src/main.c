@@ -297,7 +297,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
       // --- NEW: Write magnitudes to SD if a full set is complete ---
       // Solo intenta escribir si hay nuevos datos de FFT Y la SD no está ocupada con otra escritura.
-      if (new_fft_data_complete && !sd_write_in_progress) {
+      if ((new_fft_data_complete == 2) && !sd_write_in_progress) {
           sd_write_in_progress = true; // Establece la bandera: SD está ocupada
           printf("Writing magnitudes to SD...\r\n");
 
@@ -818,6 +818,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim){
 #ifdef comments
         printf("FFT tiempo: %.4f ms\n", tiempofft/80000.0);
 #endif
+        if (new_fft_data_complete==1){
+            new_fft_data_complete = 2;
+        }
         //const char* header = "DMA x:";
        // HAL_UART_Transmit(&huart2, (uint8_t*)header, strlen(header), HAL_MAX_DELAY);
 
@@ -1089,7 +1092,7 @@ void Error_Handler(void)
 #ifdef  USE_FULL_ASSERT
 /**
   * @brief  Reports the name of the source file and the source line number
-  * where the assert_param error has occurred.
+  *         where the assert_param error has occurred.
   * @param  file: pointer to the source file name
   * @param  line: assert_param error line source number
   * @retval None

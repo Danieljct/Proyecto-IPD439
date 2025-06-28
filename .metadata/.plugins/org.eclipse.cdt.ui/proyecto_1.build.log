@@ -1,4 +1,4 @@
-14:32:38 **** Incremental Build of configuration Debug for project proyecto_1 ****
+15:34:23 **** Incremental Build of configuration Debug for project proyecto_1 ****
 make -j4 all 
 arm-none-eabi-gcc "../Core/Src/main.c" -mcpu=cortex-m4 -std=gnu11 -g -DDEBUG -DUSE_HAL_DRIVER -DSTM32L476xx -c -I../Core/Inc -I../FATFS/Target -I../FATFS/App -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HAL_Driver/Inc/Legacy -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Middlewares/Third_Party/FatFs/src -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Device/ST/STM32L4xx/Include -IC:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/CMSIS/Include -I../X-CUBE-MEMS1/Target -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-MEMS1/11.1.0/Drivers/BSP/Components/lsm6dsl -IC:/Users/danie/STM32Cube/Repository//Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Inc -Og -fdata-sections -Wall -fstack-usage -fcyclomatic-complexity -MMD -MP -MF"Core/Src/main.d" -MT"Core/Src/main.o" --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -o "Core/Src/main.o"
 ../Core/Src/main.c: In function 'HAL_DMA_Callback':
@@ -64,15 +64,15 @@ C:/Users/danie/STM32Cube/Repository/STM32Cube_FW_L4_V1.18.1/Drivers/STM32L4xx_HA
   789 |   static int count = 0;
       |              ^~~~~
 ../Core/Src/main.c: In function 'write_magnitudes_to_sd':
-../Core/Src/main.c:1003:13: warning: variable 'chars_formatted' set but not used [-Wunused-but-set-variable]
- 1003 |         int chars_formatted;
+../Core/Src/main.c:1006:13: warning: variable 'chars_formatted' set but not used [-Wunused-but-set-variable]
+ 1006 |         int chars_formatted;
       |             ^~~~~~~~~~~~~~~
 ../Core/Src/main.c: In function 'HAL_TIM_PeriodElapsedCallback':
-../Core/Src/main.c:836:20: warning: 'magintudmax' may be used uninitialized [-Wmaybe-uninitialized]
-  836 |             else if(magnitudes[i] > magintudmax) {
+../Core/Src/main.c:839:20: warning: 'magintudmax' may be used uninitialized [-Wmaybe-uninitialized]
+  839 |             else if(magnitudes[i] > magintudmax) {
       |                    ^
-../Core/Src/main.c:831:15: note: 'magintudmax' was declared here
-  831 |         float magintudmax;
+../Core/Src/main.c:834:15: note: 'magintudmax' was declared here
+  834 |         float magintudmax;
       |               ^~~~~~~~~~~
 arm-none-eabi-gcc -o "proyecto_1.elf" @"objects.list"  -l:libarm_cortexM4lf_math.a -mcpu=cortex-m4 -T"C:\Users\danie\OneDrive - Universidad Técnica Federico Santa María\Escritorio\u\IPD439\codigo\proyecto_1\STM32L476RGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="proyecto_1.map" -Wl,--gc-sections -static -LC:/Users/danie/STM32Cube/Repository/Packs/STMicroelectronics/X-CUBE-ALGOBUILD/1.4.0/Middlewares/Third_Party/ARM/DSP/Lib --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -u _scanf_float -Wl,--start-group -lc -lm -Wl,--end-group
 Finished building target: proyecto_1.elf
@@ -80,11 +80,11 @@ Finished building target: proyecto_1.elf
 arm-none-eabi-size  proyecto_1.elf 
 arm-none-eabi-objdump -h -S proyecto_1.elf  > "proyecto_1.list"
    text	   data	    bss	    dec	    hex	filename
- 264088	    492	  91180	 355760	  56db0	proyecto_1.elf
+ 264216	    492	  91252	 355960	  56e78	proyecto_1.elf
 Finished building: default.size.stdout
  
 Finished building: proyecto_1.list
  
 
-14:32:48 Build Finished. 0 errors, 13 warnings. (took 9s.525ms)
+15:34:28 Build Finished. 0 errors, 13 warnings. (took 5s.375ms)
 

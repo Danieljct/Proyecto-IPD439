@@ -157,7 +157,7 @@ class FFTViewer(QMainWindow):
             self.plot_curve.setData(self.frequencies, self.data_magnitudes[0, :])
             # Set initial Y-axis range based on the first frame or global max
             # Use np.nanmax to handle potential NaN values
-            ylim_max = np.nanmax(self.data_magnitudes[0, 30:]) * 1.1 if self.data_magnitudes[0, 30:].size > 0 and not np.all(np.isnan(self.data_magnitudes[0, 30:])) else 1
+            ylim_max = 1000#np.nanmax(self.data_magnitudes[0, 30:]) * 1.1 if self.data_magnitudes[0, 30:].size > 0 and not np.all(np.isnan(self.data_magnitudes[0, 30:])) else 1
             self.plot_widget.setYRange(0, ylim_max)
         else:
             self.plot_curve.setData(self.frequencies, np.zeros(self.num_magnitudes)) # Clear plot if no data
